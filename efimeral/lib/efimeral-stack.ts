@@ -7,8 +7,9 @@ export class EfimeralStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const cfnPublicRepository = new ecr.CfnPublicRepository(this, 'public-efimeral-boxes', {
+    const repository = new ecr.Repository(this, 'efimeral-repository', {
       repositoryName: 'efimeral-boxes',
+      imageScanOnPush: true,
     });
   }
 }
