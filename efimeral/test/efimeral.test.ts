@@ -10,7 +10,7 @@ test('ECR repository created', () => {
   const template = Template.fromStack(stack);
 
   template.hasResourceProperties('AWS::ECR::Repository', {
-    RepositoryName: "efimeral-boxes",
+    RepositoryName: Efimeral.repositoyName,
     ImageScanningConfiguration: {
         ScanOnPush: true,
     }
