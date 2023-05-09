@@ -18,9 +18,8 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app.
 ```bash
 # export AWS_DEFAULT_PROFILE=name
 
-$ cdk bootstrap
+$ cdk bootstrap  # collects required data from AWS account
 $ cdk deploy
-$ cdk destrory  # if required
 ```
 
 ### Warnings
