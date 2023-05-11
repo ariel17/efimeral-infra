@@ -3,6 +3,9 @@ import { Construct } from 'constructs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from "aws-cdk-lib/aws-ecs";
+import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as path from 'path';
+import * as assets from 'aws-cdk-lib/aws-s3-assets';
 
 
 export const ecrResourceName = 'boxes-repository';
@@ -21,6 +24,7 @@ export const containerCPUs = 1;
 export const containerMemory = 512;
 export const containerStopTimeout = 7200;  // 2 hs
 export const containerPort = 8080;
+
 
 export class EfimeralStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -69,6 +73,26 @@ export class EfimeralStack extends cdk.Stack {
           protocol: ecs.Protocol.TCP,
         },
       ],
+    });
+
+    const lambdaAsset = new assets.Asset(this, 'lambda-handler.zip', {
+      path: path.join(__dirname, '../resources/lambda-handler.zip'),
+    });
+
+    const fn = new lambda.Function(this, 'lambda-handler', {
+      allowPublicSubnet: true,
+      handler: 'index.handler',
+      // This needs to be a zip!
+      code: lambda.Code.fromBucket(lambdaAsset.bucket, lambdaAsset.s3ObjectKey),  
+      runtime: lambda.Runtime.NODEJS_16_X,
+      environment: {
+        TASK_DEFINITION_ARN: task.taskDefinitionArn,
+        CLUSTER_ARN: cluster.clusterArn,
+        SUBNET_ID: vpc.publicSubnets[0].subnetId,
+        SECURITY_GROUP_ID: vpc.vpcDefaultSecurityGroup,
+        CONTAINER_HARD_LIMIT_TIMEOUT: `${containerStopTimeout}`,
+      },
+      vpc,
     });
   }
 }
