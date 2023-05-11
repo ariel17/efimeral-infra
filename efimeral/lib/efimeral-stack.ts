@@ -33,6 +33,7 @@ export class EfimeralStack extends cdk.Stack {
     const repository = new ecr.Repository(this, ecrRepositoyName, {
       repositoryName: ecrRepositoyName,
       imageScanOnPush: true,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     const vpc = new ec2.Vpc(this, vpcName, {
@@ -66,7 +67,6 @@ export class EfimeralStack extends cdk.Stack {
       image: ecs.ContainerImage.fromEcrRepository(repository, defaultTagImage),
       cpu: containerCPUs,
       memoryReservationMiB: containerMemory,
-      stopTimeout: cdk.Duration.seconds(containerStopTimeout),
       portMappings: [
         {
           containerPort: containerPort,
