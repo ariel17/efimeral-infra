@@ -4,6 +4,8 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as ecsPatterns from "aws-cdk-lib/aws-ecs-patterns";
+import * as elb2 from "aws-cdk-lib/aws-elasticloadbalancingv2";
 import * as path from 'path';
 import * as assets from 'aws-cdk-lib/aws-s3-assets';
 
@@ -24,6 +26,8 @@ export const containerCPUs = 1;
 export const containerMemory = 512;
 export const containerStopTimeout = 7200;  // 2 hs
 export const containerPort = 8080;
+export const ecsServiceName = 'efimeral-ecs-service';
+export const ecsServiceMemoryLimit = 512;
 
 
 export class EfimeralStack extends cdk.Stack {
@@ -37,7 +41,7 @@ export class EfimeralStack extends cdk.Stack {
     });
 
     const vpc = new ec2.Vpc(this, vpcName, {
-      maxAzs: 1,
+      maxAzs: 3,
       subnetConfiguration: [
         {
           name: vpcName,
@@ -58,12 +62,11 @@ export class EfimeralStack extends cdk.Stack {
     });
 
     const task = new ecs.TaskDefinition(this, ecsTaskName, {
-      compatibility: ecs.Compatibility.FARGATE,
+      compatibility: ecs.Compatibility.EC2,
       cpu: taskCPUs,
       memoryMiB: taskMemory,
     });
-
-    const container = task.addContainer(containerName, {
+    task.addContainer(containerName, {
       image: ecs.ContainerImage.fromEcrRepository(repository, defaultTagImage),
       cpu: containerCPUs,
       memoryReservationMiB: containerMemory,
@@ -75,6 +78,17 @@ export class EfimeralStack extends cdk.Stack {
       ],
     });
 
+    const ecsLoadBalancer = new ecsPatterns.ApplicationLoadBalancedEc2Service(this, ecsServiceName, {
+      cluster: cluster,
+      taskDefinition: task,
+      memoryLimitMiB: ecsServiceMemoryLimit,
+      publicLoadBalancer: true,
+      targetProtocol: elb2.ApplicationProtocol.HTTP,
+    });
+    ecsLoadBalancer.targetGroup.configureHealthCheck({
+      enabled: false,
+    });
+
     const lambdaAsset = new assets.Asset(this, 'lambda-handler.zip', {
       path: path.join(__dirname, '../resources/lambda-handler.zip'),
     });
@@ -82,7 +96,6 @@ export class EfimeralStack extends cdk.Stack {
     const fn = new lambda.Function(this, 'lambda-handler', {
       allowPublicSubnet: true,
       handler: 'index.handler',
-      // This needs to be a zip!
       code: lambda.Code.fromBucket(lambdaAsset.bucket, lambdaAsset.s3ObjectKey),  
       runtime: lambda.Runtime.NODEJS_16_X,
       environment: {
