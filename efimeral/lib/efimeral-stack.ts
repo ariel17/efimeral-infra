@@ -2,6 +2,8 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as apigateway from "aws-cdk-lib/aws-apigateway";
+
 
 export const ecrRepositoyName = 'efimeral-boxes';
 export const lambdaHandler = 'index.handler';
@@ -25,5 +27,16 @@ export class EfimeralStack extends cdk.Stack {
       environment: {
       },
     });
+
+    const api = new apigateway.RestApi(this, "boxes-api", {
+      restApiName: "Container service API",
+      description: "Creates new Linux boxes on demand."
+    });
+
+    const integration = new apigateway.LambdaIntegration(fn, {
+      requestTemplates: { "application/json": '{ "statusCode": "201" }' }
+    });
+
+    api.root.addMethod("POST", integration);
   }
 }
