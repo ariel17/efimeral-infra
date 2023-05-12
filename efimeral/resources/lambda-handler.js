@@ -9,7 +9,6 @@ exports.handler = async (event, context) => {
     networkConfiguration: {
       awsvpcConfiguration: {
         assignPublicIp: 'ENABLED',
-        platformVersion: 'LATEST',
         subnets: [process.env.SUBNET_ID],
         securityGroups: [process.env.SECURITY_GROUP_ID]
       }
