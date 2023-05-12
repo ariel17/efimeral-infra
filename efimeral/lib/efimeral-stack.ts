@@ -4,6 +4,7 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as ecs from "aws-cdk-lib/aws-ecs";
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
@@ -28,6 +29,17 @@ export class EfimeralStack extends cdk.Stack {
         },
       ],
     });
+
+    const cluster = new ecs.Cluster(this, 'boxes-cluster', {
+      clusterName: 'boxes-cluster',
+      containerInsights: true,
+      capacity: {
+        instanceType: new ec2.InstanceType('t2.nano'),
+        minCapacity: 0,
+        maxCapacity: 10,
+      },
+      vpc: vpc
+    });    
 
     const fn = new lambda.Function(this, 'lambda-handler', {
       runtime: lambda.Runtime.NODEJS_16_X,

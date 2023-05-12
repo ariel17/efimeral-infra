@@ -42,6 +42,34 @@ test('Stack created', () => {
     }]
   });  
 
+  template.hasResourceProperties('AWS::EC2::Route', {
+    DestinationCidrBlock: '0.0.0.0/0',
+  });
+  
+  template.hasResourceProperties('AWS::EC2::InternetGateway', {
+    Tags: [{
+      Key: "Name",
+      Value: `${stackName}/boxes-vpc`
+    }]
+  });
+  
+  template.hasResourceProperties('AWS::ECS::Cluster', {
+    ClusterName: 'boxes-cluster',
+    ClusterSettings: [{
+      Name: 'containerInsights',
+      Value: 'enabled'
+    }],
+  });
+  
+  template.hasResourceProperties('AWS::AutoScaling::LaunchConfiguration', {
+    InstanceType: 't2.nano',
+  });
+  
+  template.hasResourceProperties('AWS::AutoScaling::AutoScalingGroup', {
+    MinSize: '0',
+    MaxSize: '10',
+  });  
+
   template.hasResourceProperties('AWS::Lambda::Function', {
     Handler: Efimeral.lambdaHandler,
     Runtime: 'nodejs16.x',
