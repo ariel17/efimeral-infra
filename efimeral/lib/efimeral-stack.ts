@@ -6,7 +6,7 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
-export const lambdaHandler = 'index.handler';
+export const lambdaHandler = 'lambda-handler.handler';
 
 
 export class EfimeralStack extends cdk.Stack {

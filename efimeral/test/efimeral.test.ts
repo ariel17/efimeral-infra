@@ -24,4 +24,18 @@ test('Stack created', () => {
     Handler: Efimeral.lambdaHandler,
     Runtime: 'nodejs16.x',
   });
+
+  template.hasResource('AWS::ApiGateway::RestApi', {});
+
+  template.hasResourceProperties('AWS::ApiGateway::Method', {
+    HttpMethod: 'POST',
+    Integration: {
+      IntegrationHttpMethod: 'POST',
+      RequestTemplates: {
+        'application/json': '{ "statusCode": "201" }',
+      },
+      Type: 'AWS_PROXY',
+    },
+  });
+  
 });
