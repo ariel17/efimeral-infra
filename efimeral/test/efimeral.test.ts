@@ -20,6 +20,28 @@ test('Stack created', () => {
     }
   });
 
+  template.hasResourceProperties('AWS::EC2::VPC', {
+    Tags: [{
+      Key: "Name",
+      Value: `${stackName}/boxes-vpc`
+    }]
+  });
+
+  template.hasResourceProperties('AWS::EC2::Subnet', {
+    CidrBlock: '10.0.0.0/17',
+    MapPublicIpOnLaunch: true,
+    Tags: [{
+      Key: 'aws-cdk:subnet-name',
+      Value: 'boxes-public-subnet',
+    }, {
+      Key: 'aws-cdk:subnet-type',
+      Value: 'Public'
+    }, {
+      Key: "Name",
+      Value: `${stackName}/boxes-vpc/boxes-public-subnetSubnet1`
+    }]
+  });  
+
   template.hasResourceProperties('AWS::Lambda::Function', {
     Handler: Efimeral.lambdaHandler,
     Runtime: 'nodejs16.x',
