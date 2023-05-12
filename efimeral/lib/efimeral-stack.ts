@@ -5,6 +5,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from "aws-cdk-lib/aws-ecs";
+import * as logs from "aws-cdk-lib/aws-logs";
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
@@ -58,6 +59,7 @@ export class EfimeralStack extends cdk.Stack {
       ],
       logging: ecs.LogDrivers.awsLogs({
         streamPrefix: 'box',
+        logRetention: logs.RetentionDays.ONE_WEEK,
       }),
     });
 
@@ -67,6 +69,7 @@ export class EfimeralStack extends cdk.Stack {
       allowPublicSubnet: true,
       handler: lambdaHandler,
       timeout: cdk.Duration.seconds(900),
+      logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         TASK_DEFINITION_ARN: task.taskDefinitionArn,
         CLUSTER_ARN: cluster.clusterArn,
