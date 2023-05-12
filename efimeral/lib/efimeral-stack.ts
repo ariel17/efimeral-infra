@@ -56,6 +56,9 @@ export class EfimeralStack extends cdk.Stack {
           protocol: ecs.Protocol.TCP,
         },
       ],
+      logging: ecs.LogDrivers.awsLogs({
+        streamPrefix: 'box',
+      }),
     });
 
     const fn = new lambda.Function(this, 'lambda-handler', {
@@ -63,7 +66,7 @@ export class EfimeralStack extends cdk.Stack {
       code: lambda.Code.fromAsset('resources'),
       allowPublicSubnet: true,
       handler: lambdaHandler,
-      timeout: cdk.Duration.seconds(300),
+      timeout: cdk.Duration.seconds(900),
       environment: {
         TASK_DEFINITION_ARN: task.taskDefinitionArn,
         CLUSTER_ARN: cluster.clusterArn,
