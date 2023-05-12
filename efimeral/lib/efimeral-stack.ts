@@ -26,8 +26,9 @@ export const containerCPUs = 1;
 export const containerMemory = 512;
 export const containerStopTimeout = 7200;  // 2 hs
 export const containerPort = 8080;
-export const ecsServiceName = 'efimeral-ecs-service';
-export const ecsServiceMemoryLimit = 512;
+export const ecsLoadBalancerName = 'efimeral-load-balancer';
+export const ecsLoadBalancerMemoryLimit = 512;
+export const ecsLoadBalancerCPUs = 256;
 
 
 export class EfimeralStack extends cdk.Stack {
@@ -62,7 +63,7 @@ export class EfimeralStack extends cdk.Stack {
     });
 
     const task = new ecs.TaskDefinition(this, ecsTaskName, {
-      compatibility: ecs.Compatibility.EC2,
+      compatibility: ecs.Compatibility.EC2_AND_FARGATE,
       cpu: taskCPUs,
       memoryMiB: taskMemory,
     });
@@ -78,12 +79,14 @@ export class EfimeralStack extends cdk.Stack {
       ],
     });
 
-    const ecsLoadBalancer = new ecsPatterns.ApplicationLoadBalancedEc2Service(this, ecsServiceName, {
+    const ecsLoadBalancer = new ecsPatterns.ApplicationLoadBalancedEc2Service(this, ecsLoadBalancerName, {
       cluster: cluster,
       taskDefinition: task,
-      memoryLimitMiB: ecsServiceMemoryLimit,
+      cpu: ecsLoadBalancerCPUs,
+      memoryLimitMiB: ecsLoadBalancerMemoryLimit,
       publicLoadBalancer: true,
       targetProtocol: elb2.ApplicationProtocol.HTTP,
+      listenerPort: containerPort,
     });
     ecsLoadBalancer.targetGroup.configureHealthCheck({
       enabled: false,
