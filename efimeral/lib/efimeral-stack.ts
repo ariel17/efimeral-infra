@@ -6,6 +6,7 @@ import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as logs from "aws-cdk-lib/aws-logs";
+import * as iam from 'aws-cdk-lib/aws-iam';
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
@@ -89,6 +90,13 @@ export class EfimeralStack extends cdk.Stack {
     });
 
     task.grantRun(fn);
+
+    const policy = new iam.PolicyStatement({
+      actions: ['ecs:RunTask', 'ecs:StartTask'],
+      resources: ['arn:aws:ecs:::*'],
+      effect: iam.Effect.ALLOW,
+    });
+    task.addToTaskRolePolicy(policy);
 
     const api = new apigateway.RestApi(this, "boxes-api", {
       restApiName: "Container service API",
