@@ -41,12 +41,33 @@ export class EfimeralStack extends cdk.Stack {
       vpc: vpc
     });    
 
+    const task = new ecs.TaskDefinition(this, 'box-task', {
+      compatibility: ecs.Compatibility.FARGATE,
+      cpu: '256',
+      memoryMiB: '512',
+    });
+    task.addContainer('box', {
+      image: ecs.ContainerImage.fromEcrRepository(repository, 'alpine'),
+      cpu: 1,
+      memoryReservationMiB: 512,
+      portMappings: [
+        {
+          containerPort: 8080,
+          protocol: ecs.Protocol.TCP,
+        },
+      ],
+    });
+
     const fn = new lambda.Function(this, 'lambda-handler', {
       runtime: lambda.Runtime.NODEJS_16_X,
       code: lambda.Code.fromAsset('resources'),
       allowPublicSubnet: true,
       handler: lambdaHandler,
       environment: {
+        TASK_DEFINITION_ARN: task.taskDefinitionArn,
+        CLUSTER_ARN: cluster.clusterArn,
+        SUBNET_ID: vpc.publicSubnets[0].subnetId,
+        SECURITY_GROUP_ID: vpc.vpcDefaultSecurityGroup,
       },
       vpc: vpc,
     });

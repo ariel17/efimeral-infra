@@ -70,6 +70,22 @@ test('Stack created', () => {
     MaxSize: '10',
   });  
 
+  template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+    Cpu: '256',
+    Memory: '512',
+    RequiresCompatibilities: ['FARGATE'],
+    ContainerDefinitions: [{
+        Name: 'box',
+        Cpu: 1,
+        Essential: true,
+        MemoryReservation: 512,
+        PortMappings: [{
+            ContainerPort: 8080,
+            Protocol: ecs.Protocol.TCP,
+        }],
+    }],
+  });
+
   template.hasResourceProperties('AWS::Lambda::Function', {
     Handler: Efimeral.lambdaHandler,
     Runtime: 'nodejs16.x',
