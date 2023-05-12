@@ -83,10 +83,12 @@ export class EfimeralStack extends cdk.Stack {
         TASK_DEFINITION_ARN: task.taskDefinitionArn,
         CLUSTER_ARN: cluster.clusterArn,
         SUBNET_ID: vpc.publicSubnets[0].subnetId,
-        SECURITY_GROUP_ID: vpc.vpcDefaultSecurityGroup,
+        SECURITY_GROUP_ID: sg.securityGroupId,
       },
       vpc: vpc,
     });
+
+    task.grantRun(fn);
 
     const api = new apigateway.RestApi(this, "boxes-api", {
       restApiName: "Container service API",
