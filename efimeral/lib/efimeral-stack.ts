@@ -86,7 +86,6 @@ export class EfimeralStack extends cdk.Stack {
         SUBNET_ID: vpc.publicSubnets[0].subnetId,
         SECURITY_GROUP_ID: sg.securityGroupId,
       },
-      vpc: vpc,
     });
 
     task.grantRun(fn);
