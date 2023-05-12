@@ -63,6 +63,7 @@ export class EfimeralStack extends cdk.Stack {
       code: lambda.Code.fromAsset('resources'),
       allowPublicSubnet: true,
       handler: lambdaHandler,
+      timeout: cdk.Duration.seconds(300),
       environment: {
         TASK_DEFINITION_ARN: task.taskDefinitionArn,
         CLUSTER_ARN: cluster.clusterArn,
