@@ -23,6 +23,7 @@ export class EfimeralStack extends cdk.Stack {
 
     const vpc = new ec2.Vpc(this, 'boxes-vpc', {
       maxAzs: 3,
+      natGateways: 0,
       subnetConfiguration: [
         {
           name: 'boxes-public-subnet',
@@ -30,6 +31,14 @@ export class EfimeralStack extends cdk.Stack {
         },
       ],
     });
+
+    const sg = new ec2.SecurityGroup(this, 'boxes-vpc-sg', {
+      vpc: vpc,
+      allowAllOutbound: true,
+      description: 'Security group for boxes VPC',
+    });
+    sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(8080), 'Allow access from any IPv4 to 8080');
+    sg.addIngressRule(ec2.Peer.anyIpv6(), ec2.Port.tcp(8080), 'Allow access from any IPv6 to 8080');
 
     const cluster = new ecs.Cluster(this, 'boxes-cluster', {
       clusterName: 'boxes-cluster',
@@ -43,10 +52,9 @@ export class EfimeralStack extends cdk.Stack {
     });    
 
     const task = new ecs.TaskDefinition(this, 'box-task', {
-      compatibility: ecs.Compatibility.EC2,
+      compatibility: ecs.Compatibility.FARGATE,
       cpu: '256',
       memoryMiB: '512',
-      networkMode: ecs.NetworkMode.BRIDGE,
     });
     task.addContainer('box', {
       image: ecs.ContainerImage.fromEcrRepository(repository, 'alpine'),

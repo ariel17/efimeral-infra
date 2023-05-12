@@ -73,8 +73,7 @@ test('Stack created', () => {
   template.hasResourceProperties('AWS::ECS::TaskDefinition', {
     Cpu: '256',
     Memory: '512',
-    RequiresCompatibilities: ['EC2'],
-    NetworkMode: "bridge",
+    RequiresCompatibilities: ['FARGATE'],
     ContainerDefinitions: [{
         Name: 'box',
         Cpu: 1,
