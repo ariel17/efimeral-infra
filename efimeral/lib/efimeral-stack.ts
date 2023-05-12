@@ -43,9 +43,10 @@ export class EfimeralStack extends cdk.Stack {
     });    
 
     const task = new ecs.TaskDefinition(this, 'box-task', {
-      compatibility: ecs.Compatibility.FARGATE,
+      compatibility: ecs.Compatibility.EC2,
       cpu: '256',
       memoryMiB: '512',
+      networkMode: ecs.NetworkMode.BRIDGE,
     });
     task.addContainer('box', {
       image: ecs.ContainerImage.fromEcrRepository(repository, 'alpine'),
