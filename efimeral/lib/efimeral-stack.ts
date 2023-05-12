@@ -37,8 +37,8 @@ export class EfimeralStack extends cdk.Stack {
       allowAllOutbound: true,
       description: 'Security group for boxes VPC',
     });
-    sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.tcp(8080), 'Allow access from any IPv4 to 8080');
-    sg.addIngressRule(ec2.Peer.anyIpv6(), ec2.Port.tcp(8080), 'Allow access from any IPv6 to 8080');
+    sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTcp(), 'Allow access from any IPv4 to all ports');
+    sg.addIngressRule(ec2.Peer.anyIpv6(), ec2.Port.allTcp(), 'Allow access from any IPv6 to all ports');
 
     const cluster = new ecs.Cluster(this, 'boxes-cluster', {
       clusterName: 'boxes-cluster',
