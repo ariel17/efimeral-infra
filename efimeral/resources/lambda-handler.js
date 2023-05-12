@@ -2,6 +2,8 @@ const AWS = require('aws-sdk');
 const ecs = new AWS.ECS();
 
 exports.handler = async (event, context) => {
+  console.log(`Env parameters: ${process.env}`);
+
   const params = {
     taskDefinition: process.env.TASK_DEFINITION_ARN, 
     cluster: process.env.CLUSTER_ARN,
@@ -17,9 +19,10 @@ exports.handler = async (event, context) => {
     startedBy: 'lambda-function'
   };
 
+  console.log(`Creating task... parameters: ${params}`);
   try {
     const data = await ecs.runTask(params).promise();
-    console.log(`Task started: ${data.tasks[0]}`);
+    console.log(`Task executed: ${data.tasks[0]}`);
     return {
       statusCode: 201,
       body: JSON.stringify({
