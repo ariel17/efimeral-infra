@@ -5,7 +5,7 @@ const ecs = new AWS.ECS();
 exports.handler = async (event, context) => {
   console.log(`Env parameters: ${JSON.stringify(process.env)}`);
 
-  const params = {
+  const taskParams = {
     taskDefinition: process.env.TASK_DEFINITION_ARN, 
     cluster: process.env.CLUSTER_ARN,
     launchType: 'FARGATE',
@@ -19,38 +19,34 @@ exports.handler = async (event, context) => {
     count: 1,
     startedBy: 'lambda-function'
   };
+  console.log(`Creating task... parameters: ${JSON.stringify(taskParams)}`);
 
-  console.log(`Creating task... parameters: ${JSON.stringify(params)}`);
-  let runTaskPromise = ecs.runTask(params).promise();
-
-  runTaskPromise.then(data => {
-    console.log(`Task executed: ${JSON.stringify(data)}`);
-    let params = {
+  try {
+    const runTaskData = await ecs.runTask(taskParams).promise();
+    console.log(`Task executed: ${JSON.stringify(runTaskData)}`);
+  
+    const waitParams = {
       cluster: process.env.CLUSTER_ARN,
       tasks: [process.env.TASK_DEFINITION_ARN,]
     }
+    const waitData = await ecs.waitFor('tasksRunning', waitParams).promise();
+    console.log(`Task is in RUNNING state: ${JSON.stringify(waitData)}`);
 
-    ecs.waitFor('tasksRunning', params).then(data => {
-      console.log(`Task is in RUNNING state: ${JSON.stringify(data)}`);
-      return {
-        statusCode: 201,
-        body: JSON.stringify({
-          message: 'Container created',
-        }),
-      };
+    return {
+      statusCode: 201,
+      body: JSON.stringify({
+        message: 'Container created',
+      }),
+    };
 
-    }).catch(e => {
-      console.error(e, e.stack)
-    });
-
-  }).catch(err => {
+  } catch(e) {
     console.error(e, e.stack)
     return {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error creating container',
-        error: err.body,
+        error: e,
       })
     };
-  });
+  };
 };
