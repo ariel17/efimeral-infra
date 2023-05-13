@@ -96,6 +96,8 @@ export class EfimeralStack extends cdk.Stack {
       effect: iam.Effect.ALLOW,
     });
     fn.role?.addToPrincipalPolicy(fnPolicy);
+    fn.grantInvoke(task.taskRole)
+    fn.addToRolePolicy(fnPolicy);
 
     const api = new apigateway.RestApi(this, "boxes-api", {
       restApiName: "Container service API",
