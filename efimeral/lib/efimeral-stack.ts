@@ -91,7 +91,7 @@ export class EfimeralStack extends cdk.Stack {
     task.grantRun(fn);
 
     const fnPolicy = new iam.PolicyStatement({
-      actions: ['ecs:ListTasks',],
+      actions: ['ecs:DescribeTasks',],
       resources: ['arn:aws:ecs:::*'],
       effect: iam.Effect.ALLOW,
     });
