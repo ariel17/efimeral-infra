@@ -27,7 +27,7 @@ exports.handler = async (event, context) => {
   
     const waitParams = {
       cluster: process.env.CLUSTER_ARN,
-      tasks: [process.env.TASK_DEFINITION_ARN,]
+      tasks: [runTaskData['tasks'][0]['taskArn'],]
     }
     console.log(`Checking task running state... parameters: ${JSON.stringify(waitParams)}`);
 
