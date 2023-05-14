@@ -11,6 +11,7 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 
 export const ecrRepositoyName = 'efimeral-boxes';
 export const lambdaHandler = 'lambda-handler.handler';
+export const containerPort = 8080;
 
 export class EfimeralStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -63,7 +64,7 @@ export class EfimeralStack extends cdk.Stack {
       memoryReservationMiB: 512,
       portMappings: [
         {
-          containerPort: 8080,
+          containerPort: containerPort,
           protocol: ecs.Protocol.TCP,
         },
       ],
@@ -78,20 +79,21 @@ export class EfimeralStack extends cdk.Stack {
       code: lambda.Code.fromAsset('resources'),
       allowPublicSubnet: true,
       handler: lambdaHandler,
-      timeout: cdk.Duration.seconds(900),
+      timeout: cdk.Duration.seconds(60),
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         TASK_DEFINITION_ARN: task.taskDefinitionArn,
         CLUSTER_ARN: cluster.clusterArn,
         SUBNET_ID: vpc.publicSubnets[0].subnetId,
         SECURITY_GROUP_ID: sg.securityGroupId,
+        CONTAINER_PORT: `${containerPort}`,
       },
     });
 
     task.grantRun(fn);
 
     const fnPolicy = new iam.PolicyStatement({
-      actions: ['ecs:DescribeTasks',],
+      actions: ['ecs:DescribeTasks', 'ec2:DescribeNetworkInterfaces'],
       resources: ["*"],  // TODO reduce this scope
       effect: iam.Effect.ALLOW,
     });
