@@ -92,11 +92,9 @@ export class EfimeralStack extends cdk.Stack {
 
     const fnPolicy = new iam.PolicyStatement({
       actions: ['ecs:DescribeTasks',],
-      resources: [cluster.clusterArn, task.taskDefinitionArn],
+      resources: ["*"],  // TODO reduce this scope
       effect: iam.Effect.ALLOW,
     });
-    fn.role?.addToPrincipalPolicy(fnPolicy);
-    fn.grantInvoke(task.taskRole)
     fn.addToRolePolicy(fnPolicy);
 
     const api = new apigateway.RestApi(this, "boxes-api", {
