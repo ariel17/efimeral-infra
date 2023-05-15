@@ -8,9 +8,9 @@ exports.handler = async (event, context) => {
 
 
   try {
-    const runTaskData = runTask();
-    const waitData = waitForRunningState(runTaskData.tasks[0].taskArn);
-    const containerURL = getContainerURL(waitData.tasks[0].attachments[0].details);
+    const runTaskData = await runTask();
+    const waitData = await waitForRunningState(runTaskData.tasks[0].taskArn);
+    const containerURL = await getContainerURL(waitData.tasks[0].attachments[0].details);
 
     return {
       statusCode: 201,
@@ -32,7 +32,7 @@ exports.handler = async (event, context) => {
   };
 };
 
-async function createTask() {
+async function runTask() {
   const taskParams = {
     taskDefinition: process.env.TASK_DEFINITION_ARN, 
     cluster: process.env.CLUSTER_ARN,
@@ -48,7 +48,7 @@ async function createTask() {
     startedBy: 'lambda-function'
   };
 
-  const runTaskData = await ecs.runTask(taskParams).promise();
+  var runTaskData = await ecs.runTask(taskParams).promise();
   console.log(`Task executed: ${JSON.stringify(runTaskData)}`);
  
   return runTaskData;
@@ -60,7 +60,7 @@ async function waitForRunningState(taskArn) {
     tasks: [taskArn,]
   }
 
-  const waitData = await ecs.waitFor('tasksRunning', waitParams).promise();
+  var waitData = await ecs.waitFor('tasksRunning', waitParams).promise();
   console.log(`Task is in RUNNING state: ${JSON.stringify(waitData)}`);
 
   return waitData;
@@ -68,7 +68,7 @@ async function waitForRunningState(taskArn) {
 
 async function getContainerURL(taskAttachmentDetails) {
   let eni = '';
-  for (let i = 0; i < tasksAttachmentDetails.length; i++) {
+  for (let i = 0; i < taskAttachmentDetails.length; i++) {
     if (taskAttachmentDetails[i].name === 'networkInterfaceId') {
       eni = taskAttachmentDetails[i].value;
       break;
