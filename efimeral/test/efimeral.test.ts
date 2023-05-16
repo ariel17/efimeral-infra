@@ -87,7 +87,7 @@ test('Stack created', () => {
   });
 
   template.hasResourceProperties('AWS::Lambda::Function', {
-    Handler: Efimeral.lambdaHandler,
+    Handler: 'api.handler',
     Runtime: 'nodejs18.x',
   });
 

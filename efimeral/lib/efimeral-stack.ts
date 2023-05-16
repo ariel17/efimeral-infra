@@ -7,13 +7,13 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { warn } from 'console';
+import * as events from 'aws-cdk-lib/aws-events';
+import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
-export const lambdaHandler = 'api.handler';
 export const containerPort = 8080;
-export const containerTimeoutMinutes = 60;
+export const containerTimeoutMinutes = 1;
 
 export class EfimeralStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -81,7 +81,7 @@ export class EfimeralStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_18_X,
       code: lambda.Code.fromAsset('./lambdas/api'),
       allowPublicSubnet: true,
-      handler: lambdaHandler,
+      handler: 'api.handler',
       timeout: cdk.Duration.seconds(60),
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
@@ -119,8 +119,7 @@ export class EfimeralStack extends cdk.Stack {
       description: 'Destroys timeouted containers in RUNNING state.',
       runtime: lambda.Runtime.NODEJS_18_X,
       code: lambda.Code.fromAsset('./lambdas/scheduled'),
-      allowPublicSubnet: true,
-      handler: lambdaHandler,
+      handler: 'killer.handler',
       timeout: cdk.Duration.seconds(60),
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
@@ -130,10 +129,16 @@ export class EfimeralStack extends cdk.Stack {
     });
 
     const fnKillerPolicy = new iam.PolicyStatement({
-      actions: ['ecs:ListTasks', 'ecs:DescribeTasks', 'ec2:StopTask'],
+      actions: ['ecs:ListTasks', 'ecs:DescribeTasks', 'ecs:StopTask'],
       resources: ["*"],
       effect: iam.Effect.ALLOW,
     });
-    fnKiller.addToRolePolicy(fnHandlerPolicy);
+    fnKiller.addToRolePolicy(fnKillerPolicy);
+
+    const killerRule = new events.Rule(this, 'KillerScheduledRule', {
+      schedule: events.Schedule.rate(cdk.Duration.minutes(1)),
+    });
+
+    killerRule.addTarget(new targets.LambdaFunction(fnKiller));
   }
 }
