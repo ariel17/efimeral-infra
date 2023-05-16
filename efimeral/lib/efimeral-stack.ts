@@ -75,7 +75,7 @@ export class EfimeralStack extends cdk.Stack {
     });
 
     const fn = new lambda.Function(this, 'lambda-handler', {
-      runtime: lambda.Runtime.NODEJS_16_X,
+      runtime: lambda.Runtime.NODEJS_18_X,
       code: lambda.Code.fromAsset('resources'),
       allowPublicSubnet: true,
       handler: lambdaHandler,
