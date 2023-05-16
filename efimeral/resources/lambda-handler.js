@@ -1,6 +1,12 @@
-const AWS = require('aws-sdk');
-const ecs = new AWS.ECS();
-const ec2 = new AWS.EC2();
+const {
+        EC2
+      } = require("@aws-sdk/client-ec2"),
+      {
+        ECS,
+        waitUntilTasksRunning
+      } = require("@aws-sdk/client-ecs");
+const ecs = new ECS();
+const ec2 = new EC2();
 
 
 exports.handler = async (event, context) => {
@@ -48,7 +54,7 @@ async function runTask() {
     startedBy: 'lambda-function'
   };
 
-  var runTaskData = await ecs.runTask(taskParams).promise();
+  var runTaskData = await ecs.runTask(taskParams);
   console.log(`Task executed: ${JSON.stringify(runTaskData)}`);
  
   return runTaskData;
@@ -60,7 +66,10 @@ async function waitForRunningState(taskArn) {
     tasks: [taskArn,]
   }
 
-  var waitData = await ecs.waitFor('tasksRunning', waitParams).promise();
+  var waitData = await waitUntilTasksRunning({
+    client: ecs,
+    maxWaitTime: 200
+  }, waitParams);
   console.log(`Task is in RUNNING state: ${JSON.stringify(waitData)}`);
 
   return waitData;
@@ -82,7 +91,7 @@ async function getContainerURL(taskAttachmentDetails) {
   const networkParams = {
     NetworkInterfaceIds: [eni],
   }
-  const networkData = await ec2.describeNetworkInterfaces(networkParams).promise();
+  const networkData = await ec2.describeNetworkInterfaces(networkParams);
   console.log(`Network data: ${JSON.stringify(networkData)}`);
   
   return `http://${networkData.NetworkInterfaces[0].Association.PublicDnsName}:${process.env.CONTAINER_PORT}`
