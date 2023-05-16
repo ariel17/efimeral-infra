@@ -1,17 +1,17 @@
-const { ECS, waitUntilTasksRunning } = require("@aws-sdk/client-ecs");
+const { ECS } = require("@aws-sdk/client-ecs");
 
 
 exports.handler = async (event, context) => {
   const ecs = new ECS();
-  let killed = 0;
 
   try {
-    killed = await killTimeoutedTasks(ecs, getRunningTasks(ecs));
+    const runningTasks = await getRunningTasks(ecs);
+    const total = await killTimeoutedTasks(ecs, runningTasks);
+    return `${total} tasks killed`
+
   } catch(e) {
     console.error(e, e.stack)
   };
-
-  return `${killed} tasks killed`
 };
 
 async function getRunningTasks(ecs) {
@@ -26,16 +26,21 @@ async function getRunningTasks(ecs) {
 }
 
 async function killTimeoutedTasks(ecs, taskArns) {
+    if (taskArns.length == 0) {
+      return 0;
+    }
+
     const describeParams = {
         cluster: process.env.CLUSTER_ARN,
         tasks: taskArns,
     };
+
     const descriptions = await ecs.describeTasks(describeParams)
 
     const now = new Date();
     let killed = 0;
     for (var i = 0; i < descriptions.tasks.length; i++) {
-        task = descriptions.tasks[i];
+        let task = descriptions.tasks[i];
         if (!containerIsTimeouted(task.createdAt)) {
           continue;
         }
@@ -55,7 +60,7 @@ async function killTimeoutedTasks(ecs, taskArns) {
 
 function containerIsTimeouted(createdAt) {
     const now = new Date();
-    elapsedTimeMs = now - createdAt;
-    elapsedMinutes = elapsedTimeMs / 1000 / 60;
+    const elapsedTimeMs = now - createdAt;
+    const elapsedMinutes = elapsedTimeMs / 1000 / 60;
     return elapsedMinutes >= Number(process.env.CONTAINER_TIMEOUT_MINUTES);
 } 
