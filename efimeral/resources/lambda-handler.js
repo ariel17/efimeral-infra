@@ -30,7 +30,7 @@ exports.handler = async (event, context) => {
 };
 
 async function runTask(ecs) {
-  const taskParams = {
+  const params = {
     taskDefinition: process.env.TASK_DEFINITION_ARN, 
     cluster: process.env.CLUSTER_ARN,
     launchType: 'FARGATE',
@@ -45,25 +45,25 @@ async function runTask(ecs) {
     startedBy: 'lambda-function'
   };
 
-  var runTaskData = await ecs.runTask(taskParams);
-  console.log(`Task executed: ${JSON.stringify(runTaskData)}`);
+  var data = await ecs.runTask(params);
+  console.log(`Task executed: ${JSON.stringify(data)}`);
  
-  return runTaskData;
+  return data;
 }
 
 async function waitForRunningState(ecs, taskArn) {
-  const waitParams = {
+  const params = {
     cluster: process.env.CLUSTER_ARN,
     tasks: [taskArn,]
   }
 
-  var waitData = await waitUntilTasksRunning({
+  var data = await waitUntilTasksRunning({
     client: ecs,
     maxWaitTime: 200
-  }, waitParams);
-  console.log(`Task is in RUNNING state: ${JSON.stringify(waitData)}`);
+  }, params);
+  console.log(`Task is in RUNNING state: ${JSON.stringify(data)}`);
 
-  return waitData;
+  return data;
 }
 
 async function getContainerURL(details) {
@@ -79,13 +79,13 @@ async function getContainerURL(details) {
     throw 'Cannot obtain network interface ID';
   }
   
-  const networkParams = {
+  const params = {
     NetworkInterfaceIds: [eni],
   }
 
   const ec2 = new EC2();
-  const networkData = await ec2.describeNetworkInterfaces(networkParams);
-  console.log(`Network data: ${JSON.stringify(networkData)}`);
+  const data = await ec2.describeNetworkInterfaces(params);
+  console.log(`Network data: ${JSON.stringify(data)}`);
   
-  return `http://${networkData.NetworkInterfaces[0].Association.PublicDnsName}:${process.env.CONTAINER_PORT}`
+  return `http://${data.NetworkInterfaces[0].Association.PublicDnsName}:${process.env.CONTAINER_PORT}`
 }

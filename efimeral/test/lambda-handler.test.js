@@ -8,9 +8,6 @@ const ecsMock = mockClient(ECSClient);
 const ec2Mock = mockClient(EC2Client);
 
 describe("Create containers", () => {
-  beforeEach(() => {
-  });
-
   afterEach(() => {
 	ecsMock.reset();
 	ec2Mock.reset();
