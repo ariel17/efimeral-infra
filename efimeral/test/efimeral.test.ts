@@ -88,7 +88,7 @@ test('Stack created', () => {
 
   template.hasResourceProperties('AWS::Lambda::Function', {
     Handler: Efimeral.lambdaHandler,
-    Runtime: 'nodejs16.x',
+    Runtime: 'nodejs18.x',
   });
 
   template.hasResource('AWS::ApiGateway::RestApi', {});
