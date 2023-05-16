@@ -1,22 +1,13 @@
-const {
-        EC2
-      } = require("@aws-sdk/client-ec2"),
-      {
-        ECS,
-        waitUntilTasksRunning
-      } = require("@aws-sdk/client-ecs");
-const ecs = new ECS();
-const ec2 = new EC2();
+const { EC2 } = require("@aws-sdk/client-ec2");
+const { ECS, waitUntilTasksRunning } = require("@aws-sdk/client-ecs");
 
 
 exports.handler = async (event, context) => {
-  console.log(`Env parameters: ${JSON.stringify(process.env)}`);
-
-
+  const ecs = new ECS();
   try {
-    const runTaskData = await runTask();
-    const waitData = await waitForRunningState(runTaskData.tasks[0].taskArn);
-    const containerURL = await getContainerURL(waitData.tasks[0].attachments[0].details);
+    const runTaskData = await runTask(ecs);
+    const waitData = await waitForRunningState(ecs, runTaskData.tasks[0].taskArn);
+    const containerURL = await getContainerURL(waitData.reason.tasks[0].attachments[0].details);
 
     return {
       statusCode: 201,
@@ -32,13 +23,13 @@ exports.handler = async (event, context) => {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error creating container',
-        error: e,
+        error: `${e}`,
       })
     };
   };
 };
 
-async function runTask() {
+async function runTask(ecs) {
   const taskParams = {
     taskDefinition: process.env.TASK_DEFINITION_ARN, 
     cluster: process.env.CLUSTER_ARN,
@@ -60,7 +51,7 @@ async function runTask() {
   return runTaskData;
 }
 
-async function waitForRunningState(taskArn) {
+async function waitForRunningState(ecs, taskArn) {
   const waitParams = {
     cluster: process.env.CLUSTER_ARN,
     tasks: [taskArn,]
@@ -75,11 +66,11 @@ async function waitForRunningState(taskArn) {
   return waitData;
 }
 
-async function getContainerURL(taskAttachmentDetails) {
+async function getContainerURL(details) {
   let eni = '';
-  for (let i = 0; i < taskAttachmentDetails.length; i++) {
-    if (taskAttachmentDetails[i].name === 'networkInterfaceId') {
-      eni = taskAttachmentDetails[i].value;
+  for (let i = 0; i < details.length; i++) {
+    if (details[i].name === 'networkInterfaceId') {
+      eni = details[i].value;
       break;
     }
   }
@@ -91,6 +82,8 @@ async function getContainerURL(taskAttachmentDetails) {
   const networkParams = {
     NetworkInterfaceIds: [eni],
   }
+
+  const ec2 = new EC2();
   const networkData = await ec2.describeNetworkInterfaces(networkParams);
   console.log(`Network data: ${JSON.stringify(networkData)}`);
   
