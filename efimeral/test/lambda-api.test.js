@@ -2,7 +2,7 @@ const { ECSClient, RunTaskCommand, DescribeTasksCommand } = require("@aws-sdk/cl
 const { EC2Client, DescribeNetworkInterfacesCommand } = require("@aws-sdk/client-ec2");
 const { mockClient } = require("aws-sdk-client-mock");
 
-const lambdaFunction = require("../resources/lambda-handler");
+const lambdaFunction = require("../lambdas/api/api");
 
 const ecsMock = mockClient(ECSClient);
 const ec2Mock = mockClient(EC2Client);

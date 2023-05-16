@@ -11,8 +11,9 @@ import { warn } from 'console';
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
-export const lambdaHandler = 'lambda-handler.handler';
+export const lambdaHandler = 'api.handler';
 export const containerPort = 8080;
+export const containerTimeoutMinutes = 60;
 
 export class EfimeralStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -75,10 +76,10 @@ export class EfimeralStack extends cdk.Stack {
       }),
     });
 
-    const fn = new lambda.Function(this, 'lambda-handler', {
-      description: 'Creates new instances on Fargate cluster and returns the public URL',
+    const fnHandler = new lambda.Function(this, 'lambda-api-handler', {
+      description: 'Creates new instances on Fargate cluster and returns the public URL.',
       runtime: lambda.Runtime.NODEJS_18_X,
-      code: lambda.Code.fromAsset('resources'),
+      code: lambda.Code.fromAsset('./lambdas/api'),
       allowPublicSubnet: true,
       handler: lambdaHandler,
       timeout: cdk.Duration.seconds(60),
@@ -92,27 +93,47 @@ export class EfimeralStack extends cdk.Stack {
       },
     });
 
-    task.grantRun(fn);
+    task.grantRun(fnHandler);
 
-    const fnPolicy = new iam.PolicyStatement({
+    const fnHandlerPolicy = new iam.PolicyStatement({
       actions: ['ecs:DescribeTasks', 'ec2:DescribeNetworkInterfaces'],
       resources: ["*"],
       effect: iam.Effect.ALLOW,
     });
-    fn.addToRolePolicy(fnPolicy);
+    fnHandler.addToRolePolicy(fnHandlerPolicy);
 
     const api = new apigateway.RestApi(this, "boxes-api", {
       restApiName: "Container service API",
       description: "Creates new Linux boxes on demand."
     });
 
-    const integration = new apigateway.LambdaIntegration(fn, {
+    const integration = new apigateway.LambdaIntegration(fnHandler, {
       requestTemplates: { "application/json": '{ "statusCode": "201" }' }
     });
 
     api.root.addMethod("POST", integration);
   
-    // 👇 create an Output for the API URL
     new cdk.CfnOutput(this, 'apiUrl', {value: api.url});
+
+    const fnKiller = new lambda.Function(this, 'lambda-scheduled-killer', {
+      description: 'Destroys timeouted containers in RUNNING state.',
+      runtime: lambda.Runtime.NODEJS_18_X,
+      code: lambda.Code.fromAsset('./lambdas/scheduled'),
+      allowPublicSubnet: true,
+      handler: lambdaHandler,
+      timeout: cdk.Duration.seconds(60),
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        CLUSTER_ARN: cluster.clusterArn,
+        CONTAINER_TIMEOUT_MINUTES: `${containerTimeoutMinutes}`,
+      },
+    });
+
+    const fnKillerPolicy = new iam.PolicyStatement({
+      actions: ['ecs:ListTasks', 'ecs:DescribeTasks', 'ec2:StopTask'],
+      resources: ["*"],
+      effect: iam.Effect.ALLOW,
+    });
+    fnKiller.addToRolePolicy(fnHandlerPolicy);
   }
 }

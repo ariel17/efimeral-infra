@@ -1,7 +1,7 @@
 const { ECSClient, ListTasksCommand, DescribeTasksCommand, StopTaskCommand } = require("@aws-sdk/client-ecs");
 const { mockClient } = require("aws-sdk-client-mock");
 
-const lambdaFunction = require("../resources/lambda-killer");
+const lambdaFunction = require("../lambdas/scheduled/killer");
 
 const ecsMock = mockClient(ECSClient);
 
