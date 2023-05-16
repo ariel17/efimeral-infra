@@ -7,6 +7,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as logs from "aws-cdk-lib/aws-logs";
 import * as iam from 'aws-cdk-lib/aws-iam';
+import { warn } from 'console';
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
@@ -75,6 +76,7 @@ export class EfimeralStack extends cdk.Stack {
     });
 
     const fn = new lambda.Function(this, 'lambda-handler', {
+      description: 'Creates new instances on Fargate cluster and returns the public URL',
       runtime: lambda.Runtime.NODEJS_18_X,
       code: lambda.Code.fromAsset('resources'),
       allowPublicSubnet: true,
@@ -94,7 +96,7 @@ export class EfimeralStack extends cdk.Stack {
 
     const fnPolicy = new iam.PolicyStatement({
       actions: ['ecs:DescribeTasks', 'ec2:DescribeNetworkInterfaces'],
-      resources: ["*"],  // TODO reduce this scope
+      resources: ["*"],
       effect: iam.Effect.ALLOW,
     });
     fn.addToRolePolicy(fnPolicy);
