@@ -13,7 +13,7 @@ import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 export const ecrRepositoyName = 'efimeral-boxes';
 export const containerPort = 8080;
-export const containerTimeoutMinutes = 1;
+export const containerTimeoutMinutes = 60;
 
 export class EfimeralStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {

@@ -28,7 +28,6 @@ test('Stack created', () => {
   });
 
   template.hasResourceProperties('AWS::EC2::Subnet', {
-    CidrBlock: '10.0.0.0/17',
     MapPublicIpOnLaunch: true,
     Tags: [{
       Key: 'aws-cdk:subnet-name',
@@ -42,14 +41,28 @@ test('Stack created', () => {
     }]
   });  
 
-  template.hasResourceProperties('AWS::EC2::Route', {
-    DestinationCidrBlock: '0.0.0.0/0',
-  });
-  
   template.hasResourceProperties('AWS::EC2::InternetGateway', {
     Tags: [{
       Key: "Name",
       Value: `${stackName}/boxes-vpc`
+    }]
+  });
+  
+  template.hasResourceProperties('AWS::EC2::SecurityGroup', {
+    SecurityGroupEgress: [{
+      CidrIp: '0.0.0.0/0',
+      IpProtocol: "-1"
+    }],
+    SecurityGroupIngress: [{
+      CidrIp: '0.0.0.0/0',
+      FromPort: 0,
+      IpProtocol: 'tcp',
+      ToPort: 65535,
+    }, {
+      CidrIpv6: '::/0',
+      FromPort: 0,
+      IpProtocol: 'tcp',
+      ToPort: 65535
     }]
   });
   
@@ -88,6 +101,11 @@ test('Stack created', () => {
 
   template.hasResourceProperties('AWS::Lambda::Function', {
     Handler: 'api.handler',
+    Runtime: 'nodejs18.x',
+  });
+
+  template.hasResourceProperties('AWS::Lambda::Function', {
+    Handler: 'killer.handler',
     Runtime: 'nodejs18.x',
   });
 
