@@ -9,8 +9,17 @@ exports.handler = async (event, context) => {
     const waitData = await waitForRunningState(ecs, runTaskData.tasks[0].taskArn);
     const containerURL = await getContainerURL(waitData.reason.tasks[0].attachments[0].details);
 
+    let headers = {
+        "Access-Control-Allow-Headers" : "Content-Type",
+        "Access-Control-Allow-Methods": "POST"
+    }
+    if (process.env.CORS_DISABLED === "true") {
+        headers["Access-Control-Allow-Origin"] = "*"
+    }
+
     return {
       statusCode: 201,
+      headers: headers,
       body: JSON.stringify({
         message: 'Container created',
         url: containerURL,
