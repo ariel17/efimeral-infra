@@ -41,6 +41,10 @@ describe("Create containers", () => {
     const result = await lambdaFunction.handler();
     expect(result).toStrictEqual({
 		"body": "{\"message\":\"Container created\",\"url\":\"http://publicDNS:8080\"}", 
+		"headers": {
+		  "Access-Control-Allow-Headers": "Content-Type",
+		  "Access-Control-Allow-Methods": "POST",
+		},
 		"statusCode": 201
 	});
   });
