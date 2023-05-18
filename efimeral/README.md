@@ -7,13 +7,17 @@
 ```bash
 # export AWS_DEFAULT_PROFILE=name
 
+$ npm install
 $ cdk bootstrap  # collects required data from AWS account
 $ cdk deploy
+$ cdk destroy
 ```
 
-### Warnings
+### Testing
 
-* Public ECR repositories are only available on `us-east-1`.
+```bash
+$ npm run test
+```
 
 ## About lambdas
 
@@ -26,13 +30,4 @@ $ docker run -p 8080:8080 ariel17/lambda
 
 # terminal 2
 $ curl -XPOST "http://localhost:8080/2015-03-31/functions/function/invocations" -d '{}'
-```
-
-### Migrating from v2 to v3
-
-See: https://docs.aws.amazon.com/sdk-for-javascript/v3/developer-guide/migrating-to-v3.html
-
-```bash
-# npm install -g aws-sdk-js-codemod
-$ npx aws-sdk-js-codemod -t v2-to-v3 PATH
 ```
