@@ -1,3 +1,5 @@
 process.env.CLUSTER_ARN="fakeClusterARN"
 process.env.CONTAINER_PORT=8080
 process.env.CONTAINER_TIMEOUT_MINUTES=60
+// DSN for testing
+process.env.LAMBDAS_SENTRY_DSN="https://2a979055848c437686dcb25474d96dd1@o4505208040456192.ingest.sentry.io/4505208070012928"
