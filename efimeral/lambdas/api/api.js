@@ -1,8 +1,14 @@
 const { EC2 } = require("@aws-sdk/client-ec2");
 const { ECS, waitUntilTasksRunning } = require("@aws-sdk/client-ecs");
+const Sentry = require("@sentry/serverless");
 
+Sentry.AWSLambda.init({
+  dsn: process.env.LAMBDAS_SENTRY_DSN,
+  tracesSampleRate: 0.1,
+  timeoutWarningLimit: 40000,
+});
 
-exports.handler = async (event, context) => {
+exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
   const ecs = new ECS();
   try {
     const runTaskData = await runTask(ecs);
@@ -36,7 +42,7 @@ exports.handler = async (event, context) => {
       })
     };
   };
-};
+});
 
 async function runTask(ecs) {
   const params = {
