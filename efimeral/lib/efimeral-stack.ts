@@ -9,6 +9,7 @@ import * as logs from "aws-cdk-lib/aws-logs";
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
@@ -76,6 +77,10 @@ export class EfimeralStack extends cdk.Stack {
       }),
     });
 
+    const sentryDSN = secretsmanager.Secret.fromSecretNameV2(
+      this, 'sentry-dsn', 'lambdasSentryDSN'
+    ).secretValue.unsafeUnwrap().toString();
+
     const fnHandler = new lambda.Function(this, 'lambda-api-handler', {
       description: 'Creates new instances on Fargate cluster and returns the public URL.',
       runtime: lambda.Runtime.NODEJS_18_X,
@@ -91,6 +96,7 @@ export class EfimeralStack extends cdk.Stack {
         SECURITY_GROUP_ID: sg.securityGroupId,
         CONTAINER_PORT: `${containerPort}`,
         CORS_DISABLED: "true",
+        LAMBDAS_SENTRY_DSN: sentryDSN,
       },
     });
 
@@ -126,6 +132,7 @@ export class EfimeralStack extends cdk.Stack {
       environment: {
         CLUSTER_ARN: cluster.clusterArn,
         CONTAINER_TIMEOUT_MINUTES: `${containerTimeoutMinutes}`,
+        LAMBDAS_SENTRY_DSN: sentryDSN,
       },
     });
 
