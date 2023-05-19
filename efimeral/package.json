@@ -25,6 +25,7 @@
     "typescript": "~3.9.7"
   },
   "dependencies": {
+    "@sentry/serverless": "^7.52.1",
     "adm-zip": "^0.5.10",
     "aws-cdk-lib": "2.79.1",
     "constructs": "^10.0.0",
