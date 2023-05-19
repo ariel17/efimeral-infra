@@ -38,7 +38,7 @@ describe("Create containers", () => {
 		}],
 	});
 
-    const result = await lambdaFunction.handler();
+    const result = await lambdaFunction.handler({}, {callbackWaitsForEmptyEventLoop: false});
     expect(result).toStrictEqual({
 		"body": "{\"message\":\"Container created\",\"url\":\"http://publicDNS:8080\"}", 
 		"headers": {
@@ -64,7 +64,7 @@ describe("Create containers", () => {
 		}],
 	});
 
-    const result = await lambdaFunction.handler();
+    const result = await lambdaFunction.handler({}, {callbackWaitsForEmptyEventLoop: false});
     expect(result).toStrictEqual({
 		"body": "{\"message\":\"Error creating container\",\"error\":\"Cannot obtain network interface ID\"}",
 		"statusCode": 500

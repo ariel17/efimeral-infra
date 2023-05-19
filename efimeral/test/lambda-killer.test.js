@@ -27,7 +27,7 @@ describe("Kill containers", () => {
 		}],
 	});
 
-    const result = await lambdaFunction.handler();
+    const result = await lambdaFunction.handler({}, {callbackWaitsForEmptyEventLoop: false});
     expect(result).toStrictEqual('1 tasks killed');
   });
 });
