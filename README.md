@@ -1,6 +1,6 @@
-![CDK status badge](https://github.com/ariel17/efimeral-infra/actions/workflows/cdk.yml/badge.svg)
+![CDK status badge](https://github.com/ariel17/efimeral-api/actions/workflows/cdk.yml/badge.svg)
 
-# Efimeral infrastructure configuration
+# Efimeral API infrastructure configuration
 
 [AWS CDK](https://aws.amazon.com/cdk/) is used to configure cloud architecture.
 The intention is leaving none idle resources consuming money, so Fargate tasks
