@@ -1,5 +1,7 @@
 ![CDK status badge](https://github.com/ariel17/efimeral-api/actions/workflows/cdk.yml/badge.svg)
 
+![Logo](./docs/logo.png)
+
 # Efimeral API infrastructure configuration
 
 [AWS CDK](https://aws.amazon.com/cdk/) is used to configure cloud architecture.
