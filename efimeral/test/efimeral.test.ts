@@ -9,7 +9,9 @@ const stackName = "MyTestStack"
 test('Stack created', () => {
   const app = new cdk.App();
     // WHEN
-  const stack = new Efimeral.EfimeralStack(app, stackName);
+  const stack = new Efimeral.APIStack(app, stackName, {
+    env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
+  });
     // THEN
   const template = Template.fromStack(stack);
 
