@@ -10,13 +10,17 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
 export const containerPort = 8080;
 export const containerTimeoutMinutes = 60;
+export const apiSubdomain = 'api.efimeral.ar';
 
-export class EfimeralStack extends cdk.Stack {
+export class APIStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
@@ -148,5 +152,33 @@ export class EfimeralStack extends cdk.Stack {
     });
 
     killerRule.addTarget(new targets.LambdaFunction(fnKiller));
+
+
+    // API Subdomain --------------------
+
+    const webZone = route53.PublicHostedZone.fromLookup(this, 'lookup-web-hosted-zone', {
+      domainName: 'efimeral.ar',
+    });
+
+    const certificate = new acm.Certificate(this, 'api-certificate', {
+      domainName: apiSubdomain,
+      validation: acm.CertificateValidation.fromDns(webZone),
+    });
+  
+    const domain = new apigateway.DomainName(this, 'api-subdomain', {
+      domainName: apiSubdomain,
+      certificate: certificate,
+      endpointType: apigateway.EndpointType.REGIONAL,
+    });
+  
+    domain.addBasePathMapping(api, {
+      basePath: 'prod',
+    })
+
+    new route53.ARecord(this, 'api-subdomain-alias-record', {
+      zone: webZone,
+      recordName: apiSubdomain,
+      target: route53.RecordTarget.fromAlias(new route53Targets.ApiGatewayDomain(domain)),
+    });
   }
 }
