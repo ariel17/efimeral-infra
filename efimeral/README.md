@@ -2,6 +2,12 @@
 
 ## About CDK
 
+## Required environment variables
+
+* CDK_DEFAULT_ACCOUNT: The AWS account ID to use
+* CDK_DEFAULT_REGION: The AWS region to use
+* WEB_HOSTED_ZONE_ID: The public hosted zone ID from `efimeral-web` project.
+
 ### Steps
 
 ```bash
