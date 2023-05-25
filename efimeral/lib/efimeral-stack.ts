@@ -102,8 +102,12 @@ export class APIStack extends cdk.Stack {
         CONTAINER_PORT: `${containerPort}`,
         CORS_DISABLED: "true",
         LAMBDAS_SENTRY_DSN: sentryDSN,
+        MAX_ALLOWED_RUNNING_TASKS: "10",
       },
       bundling: {
+        esbuildArgs: {
+          '--alias:@layer': './lambdas/layers/listtasks/nodejs',
+        },
         nodeModules: [
           '@sentry/serverless',
         ],
@@ -113,7 +117,7 @@ export class APIStack extends cdk.Stack {
     task.grantRun(fnHandler);
 
     const fnHandlerPolicy = new iam.PolicyStatement({
-      actions: ['ecs:DescribeTasks', 'ec2:DescribeNetworkInterfaces'],
+      actions: ['ecs:ListTasks', 'ecs:DescribeTasks', 'ec2:DescribeNetworkInterfaces'],
       resources: ["*"],
       effect: iam.Effect.ALLOW,
     });
@@ -145,6 +149,9 @@ export class APIStack extends cdk.Stack {
         LAMBDAS_SENTRY_DSN: sentryDSN,
       },
       bundling: {
+        esbuildArgs: {
+          '--alias:@layer': './lambdas/layers/listtasks/nodejs',
+        },
         nodeModules: [
           '@sentry/serverless',
         ],

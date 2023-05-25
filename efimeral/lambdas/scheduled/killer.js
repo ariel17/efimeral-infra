@@ -12,7 +12,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
   const ecs = new ECS();
 
   try {
-    const runningTasks = await getRunningTasks(ecs);
+    const runningTasks = await getRunningTasks(process.env.CLUSTER_ARN, ecs);
     const total = await killTimeoutedTasks(ecs, runningTasks);
     return `${total} tasks killed`
 
@@ -21,9 +21,9 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
   };
 });
 
-async function getRunningTasks(ecs) {
+async function getRunningTasks(clusterArn, ecs) {
   const params = {
-    cluster: process.env.CLUSTER_ARN,
+    cluster: clusterArn,
     desiredStatus: 'RUNNING',
   };
   var running = await ecs.listTasks(params);
