@@ -18,7 +18,7 @@ import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 
 export const ecrRepositoyName = 'efimeral-boxes';
 export const containerPort = 8080;
-export const containerTimeoutMinutes = 60;
+export const containerTimeoutMinutes = 10;
 export const apiSubdomain = 'api.efimeral.ar';
 
 export class APIStack extends cdk.Stack {
