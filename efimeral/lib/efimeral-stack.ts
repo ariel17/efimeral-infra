@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as lambdaNodeJS from "aws-cdk-lib/aws-lambda-nodejs";
 import * as apigateway from "aws-cdk-lib/aws-apigateway";
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from "aws-cdk-lib/aws-ecs";
@@ -55,7 +56,7 @@ export class APIStack extends cdk.Stack {
       capacity: {
         instanceType: new ec2.InstanceType('t2.nano'),
         minCapacity: 0,
-        maxCapacity: 10,
+        maxCapacity: 3,
       },
       vpc: vpc
     });    
@@ -85,12 +86,12 @@ export class APIStack extends cdk.Stack {
       this, 'sentry-dsn', 'lambdasSentryDSN'
     ).secretValue.unsafeUnwrap().toString();
 
-    const fnHandler = new lambda.Function(this, 'lambda-api-handler', {
+    const fnHandler = new lambdaNodeJS.NodejsFunction(this, 'lambda-api-handler', {
       description: 'Creates new instances on Fargate cluster and returns the public URL.',
       runtime: lambda.Runtime.NODEJS_18_X,
-      code: lambda.Code.fromAsset('./lambdas/api'),
+      entry: './lambdas/api/api.js',
       allowPublicSubnet: true,
-      handler: 'api.handler',
+      handler: 'handler',
       timeout: cdk.Duration.seconds(60),
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
@@ -101,6 +102,11 @@ export class APIStack extends cdk.Stack {
         CONTAINER_PORT: `${containerPort}`,
         CORS_DISABLED: "true",
         LAMBDAS_SENTRY_DSN: sentryDSN,
+      },
+      bundling: {
+        nodeModules: [
+          '@sentry/serverless',
+        ],
       },
     });
 
@@ -126,17 +132,22 @@ export class APIStack extends cdk.Stack {
   
     new cdk.CfnOutput(this, 'apiUrl', {value: api.url});
 
-    const fnKiller = new lambda.Function(this, 'lambda-scheduled-killer', {
+    const fnKiller = new lambdaNodeJS.NodejsFunction(this, 'lambda-scheduled-killer', {
       description: 'Destroys timeouted containers in RUNNING state.',
       runtime: lambda.Runtime.NODEJS_18_X,
-      code: lambda.Code.fromAsset('./lambdas/scheduled'),
-      handler: 'killer.handler',
+      entry: './lambdas/scheduled/killer.js',
+      handler: 'handler',
       timeout: cdk.Duration.seconds(60),
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         CLUSTER_ARN: cluster.clusterArn,
         CONTAINER_TIMEOUT_MINUTES: `${containerTimeoutMinutes}`,
         LAMBDAS_SENTRY_DSN: sentryDSN,
+      },
+      bundling: {
+        nodeModules: [
+          '@sentry/serverless',
+        ],
       },
     });
 
@@ -156,8 +167,9 @@ export class APIStack extends cdk.Stack {
 
     // API Subdomain --------------------
 
-    const webZone = route53.PublicHostedZone.fromLookup(this, 'lookup-web-hosted-zone', {
-      domainName: 'efimeral.ar',
+    const webZone = route53.PublicHostedZone.fromHostedZoneAttributes(this, 'lookup-web-hosted-zone', {
+      zoneName: 'efimeral.ar',
+      hostedZoneId: String(process.env.WEB_HOSTED_ZONE_ID),
     });
 
     const certificate = new acm.Certificate(this, 'api-certificate', {
