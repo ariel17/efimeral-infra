@@ -100,7 +100,7 @@ export class APIStack extends cdk.Stack {
         SUBNET_ID: vpc.publicSubnets[0].subnetId,
         SECURITY_GROUP_ID: sg.securityGroupId,
         CONTAINER_PORT: `${containerPort}`,
-        CORS_DISABLED: "true",
+        CORS_DISABLED: "false",
         LAMBDAS_SENTRY_DSN: sentryDSN,
         MAX_ALLOWED_RUNNING_TASKS: "10",
       },
