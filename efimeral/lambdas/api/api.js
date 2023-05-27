@@ -27,7 +27,8 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
         statusCode: 429,
         headers: headers,
         body: JSON.stringify({
-          message: 'Max amount of boxes reached.',
+          message: 'Error creating container',
+          error: 'Max amount of boxes reached',
         }),
       };
     }

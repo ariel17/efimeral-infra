@@ -82,7 +82,7 @@ test('Stack created', () => {
   
   template.hasResourceProperties('AWS::AutoScaling::AutoScalingGroup', {
     MinSize: '0',
-    MaxSize: '10',
+    MaxSize: '3',
   });  
 
   template.hasResourceProperties('AWS::ECS::TaskDefinition', {
