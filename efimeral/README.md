@@ -2,7 +2,7 @@
 
 ## About CDK
 
-## Required environment variables
+### Required environment variables
 
 * CDK_DEFAULT_ACCOUNT: The AWS account ID to use
 * CDK_DEFAULT_REGION: The AWS region to use
@@ -17,6 +17,19 @@ $ npm install
 $ cdk bootstrap  # collects required data from AWS account
 $ cdk deploy
 $ cdk destroy
+```
+
+### Required secrets
+
+Sentry DSN is required for reporting errors on lambdas. Manage the value as
+follows:
+
+```bash
+# For creation
+$ aws secretsmanager create-secret --name lambdasSentryDSN --description "Sentry DSN for Lambdas" --secret-string "<SENTRY_DSN>"
+
+# For updates
+aws secretsmanager put-secret-value --secret-id <SECRET_ARN> --secret-string "<SENTRY_DSN>"
 ```
 
 ### Testing
