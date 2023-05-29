@@ -86,36 +86,6 @@ export class APIStack extends cdk.Stack {
       this, 'sentry-dsn', 'lambdasSentryDSN'
     ).secretValue.unsafeUnwrap().toString();
 
-    const fnHandler = new lambdaNodeJS.NodejsFunction(this, 'lambda-api-handler', {
-      description: 'Creates new instances on Fargate cluster and returns the public URL.',
-      runtime: lambda.Runtime.NODEJS_18_X,
-      entry: './lambdas/api/api.js',
-      allowPublicSubnet: true,
-      handler: 'handler',
-      timeout: cdk.Duration.seconds(60),
-      logRetention: logs.RetentionDays.ONE_WEEK,
-      environment: {
-        TASK_DEFINITION_ARN: task.taskDefinitionArn,
-        CLUSTER_ARN: cluster.clusterArn,
-        SUBNET_ID: vpc.publicSubnets[0].subnetId,
-        SECURITY_GROUP_ID: sg.securityGroupId,
-        CONTAINER_PORT: `${containerPort}`,
-        CORS_DISABLED: "false",
-        LAMBDAS_SENTRY_DSN: sentryDSN,
-        MAX_ALLOWED_RUNNING_TASKS: "10",
-      },
-      bundling: {
-        esbuildArgs: {
-          '--alias:@layer': './lambdas/layers/listtasks/nodejs',
-        },
-        nodeModules: [
-          '@sentry/serverless',
-        ],
-      },
-    });
-
-    task.grantRun(fnHandler);
-
     const fnApiCreateBoxHandler = new lambdaNodeJS.NodejsFunction(this, 'api-create-box', {
       description: 'Creates new instances on Fargate cluster and returns the task ID as box ID.',
       runtime: lambda.Runtime.NODEJS_18_X,
@@ -126,7 +96,7 @@ export class APIStack extends cdk.Stack {
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
         LAMBDAS_SENTRY_DSN: sentryDSN,
-        CORS_DISABLED: "false",
+        CORS_DISABLED: "true",
         CLUSTER_ARN: cluster.clusterArn,
         MAX_ALLOWED_RUNNING_TASKS: "10",
         TASK_DEFINITION_ARN: task.taskDefinitionArn,
@@ -145,30 +115,60 @@ export class APIStack extends cdk.Stack {
 
     task.grantRun(fnApiCreateBoxHandler);
 
-    const fnHandlerPolicy = new iam.PolicyStatement({
-      actions: ['ecs:ListTasks', 'ecs:DescribeTasks', 'ec2:DescribeNetworkInterfaces'],
+    const fnApiCheckBoxIdHandler = new lambdaNodeJS.NodejsFunction(this, 'api-check-box-id', {
+      description: 'Checks RUNNING state for box ID and returns its public URL if exists',
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: './lambdas/api/check-box-id.js',
+      allowPublicSubnet: true,
+      handler: 'handler',
+      timeout: cdk.Duration.seconds(10),
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        LAMBDAS_SENTRY_DSN: sentryDSN,
+        CORS_DISABLED: "true",
+        CLUSTER_ARN: cluster.clusterArn,
+        CONTAINER_PORT: `${containerPort}`,
+      },
+      bundling: {
+        esbuildArgs: {
+          '--alias:@layer': './lambdas/layers/listtasks/nodejs',
+        },
+        nodeModules: [
+          '@sentry/serverless',
+        ],
+      },
+    });
+
+    const fnApiCreateBoxPolicy = new iam.PolicyStatement({
+      actions: ['ecs:ListTasks',],
       resources: ["*"],
       effect: iam.Effect.ALLOW,
     });
-    fnHandler.addToRolePolicy(fnHandlerPolicy);
-    fnApiCreateBoxHandler.addToRolePolicy(fnHandlerPolicy);
+    fnApiCreateBoxHandler.addToRolePolicy(fnApiCreateBoxPolicy);
+
+    const fnApiCheckBoxIdPolicy = new iam.PolicyStatement({
+      actions: ['ecs:DescribeTasks', 'ec2:DescribeNetworkInterfaces'],
+      resources: ["*"],
+      effect: iam.Effect.ALLOW,
+    });
+    fnApiCheckBoxIdHandler.addToRolePolicy(fnApiCheckBoxIdPolicy);
 
     const api = new apigateway.RestApi(this, "boxes-api", {
-      restApiName: "Container service API",
-      description: "Creates new Linux boxes on demand."
+      restApiName: "Efimeral service API",
+      description: "Linux boxes on demand."
     });
 
-    const rootIntegration = new apigateway.LambdaIntegration(fnHandler, {
-      requestTemplates: { "application/json": '{ "statusCode": "201" }' }
-    });
-
-    api.root.addMethod("POST", rootIntegration);
-  
     const createBoxesIntegration = new apigateway.LambdaIntegration(fnApiCreateBoxHandler, {
       requestTemplates: { "application/json": '{ "statusCode": "201" }' }
     })
     const boxesResource = api.root.addResource('boxes');
     boxesResource.addMethod('POST', createBoxesIntegration);
+
+    const checkBoxIdIntegration = new apigateway.LambdaIntegration(fnApiCheckBoxIdHandler, {
+      requestTemplates: { "application/json": '{ "statusCode": "201" }' }
+    })
+    const boxResource = boxesResource.addResource('{box_id}');
+    boxResource.addMethod('GET', checkBoxIdIntegration);
   
     new cdk.CfnOutput(this, 'apiUrl', {value: api.url});
 

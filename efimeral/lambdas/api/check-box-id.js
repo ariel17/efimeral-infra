@@ -21,7 +21,6 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
   const ecs = new ECS();
   
   try {
-    const taskId = undefined;
     const task = await getRunningTaskById(process.env.CLUSTER_ARN, event.pathParameters.box_id, ecs);
     if (task === undefined) {
       return {
@@ -55,7 +54,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
   };
 });
 
-async function getRunningTask(clusterArn, taskId, ecs) {
+async function getRunningTaskById(clusterArn, taskId, ecs) {
   const params = {
     cluster: clusterArn,
     tasks: [taskId,]

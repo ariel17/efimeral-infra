@@ -40,7 +40,6 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
       body: JSON.stringify({
         message: 'Box created',
         box_id: getTaskId(runTaskData.tasks[0].taskArn),
-        url: containerURL,
       }),
     };
 
