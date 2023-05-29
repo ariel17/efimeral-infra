@@ -116,23 +116,59 @@ export class APIStack extends cdk.Stack {
 
     task.grantRun(fnHandler);
 
+    const fnApiCreateBoxHandler = new lambdaNodeJS.NodejsFunction(this, 'api-create-box', {
+      description: 'Creates new instances on Fargate cluster and returns the task ID as box ID.',
+      runtime: lambda.Runtime.NODEJS_18_X,
+      entry: './lambdas/api/create-box.js',
+      allowPublicSubnet: true,
+      handler: 'handler',
+      timeout: cdk.Duration.seconds(10),
+      logRetention: logs.RetentionDays.ONE_WEEK,
+      environment: {
+        LAMBDAS_SENTRY_DSN: sentryDSN,
+        CORS_DISABLED: "false",
+        CLUSTER_ARN: cluster.clusterArn,
+        MAX_ALLOWED_RUNNING_TASKS: "10",
+        TASK_DEFINITION_ARN: task.taskDefinitionArn,
+        SUBNET_ID: vpc.publicSubnets[0].subnetId,
+        SECURITY_GROUP_ID: sg.securityGroupId,
+      },
+      bundling: {
+        esbuildArgs: {
+          '--alias:@layer': './lambdas/layers/listtasks/nodejs',
+        },
+        nodeModules: [
+          '@sentry/serverless',
+        ],
+      },
+    });
+
+    task.grantRun(fnApiCreateBoxHandler);
+
     const fnHandlerPolicy = new iam.PolicyStatement({
       actions: ['ecs:ListTasks', 'ecs:DescribeTasks', 'ec2:DescribeNetworkInterfaces'],
       resources: ["*"],
       effect: iam.Effect.ALLOW,
     });
     fnHandler.addToRolePolicy(fnHandlerPolicy);
+    fnApiCreateBoxHandler.addToRolePolicy(fnHandlerPolicy);
 
     const api = new apigateway.RestApi(this, "boxes-api", {
       restApiName: "Container service API",
       description: "Creates new Linux boxes on demand."
     });
 
-    const integration = new apigateway.LambdaIntegration(fnHandler, {
+    const rootIntegration = new apigateway.LambdaIntegration(fnHandler, {
       requestTemplates: { "application/json": '{ "statusCode": "201" }' }
     });
 
-    api.root.addMethod("POST", integration);
+    api.root.addMethod("POST", rootIntegration);
+  
+    const createBoxesIntegration = new apigateway.LambdaIntegration(fnApiCreateBoxHandler, {
+      requestTemplates: { "application/json": '{ "statusCode": "201" }' }
+    })
+    const boxesResource = api.root.addResource('boxes');
+    boxesResource.addMethod('POST', createBoxesIntegration);
   
     new cdk.CfnOutput(this, 'apiUrl', {value: api.url});
 
