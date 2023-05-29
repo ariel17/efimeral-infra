@@ -1,5 +1,4 @@
-const { EC2 } = require("@aws-sdk/client-ec2");
-const { ECS, waitUntilTasksRunning } = require("@aws-sdk/client-ecs");
+const { ECS } = require("@aws-sdk/client-ecs");
 const Sentry = require("@sentry/serverless");
 
 

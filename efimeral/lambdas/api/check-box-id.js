@@ -1,5 +1,5 @@
 const { EC2 } = require("@aws-sdk/client-ec2");
-const { ECS, waitUntilTasksRunning } = require("@aws-sdk/client-ecs");
+const { ECS } = require("@aws-sdk/client-ecs");
 const Sentry = require("@sentry/serverless");
 
 
@@ -37,7 +37,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
       statusCode: 200,
       headers: headers,
       body: JSON.stringify({
-        message: 'Container is ready',
+        message: 'Box is ready',
         url: containerURL,
       }),
     };
@@ -47,7 +47,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: 'Error creating container',
+        message: 'Error creating box',
         error: `${e}`,
       })
     };

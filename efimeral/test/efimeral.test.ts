@@ -102,13 +102,15 @@ test('Stack created', () => {
   });
 
   template.hasResourceProperties('AWS::Lambda::Function', {
-    Handler: 'api.handler',
+    Handler: 'index.handler',
     Runtime: 'nodejs18.x',
+    Timeout: 10,
   });
 
   template.hasResourceProperties('AWS::Lambda::Function', {
-    Handler: 'killer.handler',
+    Handler: 'index.handler',
     Runtime: 'nodejs18.x',
+    Timeout: 60,
   });
 
   template.hasResource('AWS::ApiGateway::RestApi', {});

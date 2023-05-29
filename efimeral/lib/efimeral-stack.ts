@@ -165,7 +165,7 @@ export class APIStack extends cdk.Stack {
     boxesResource.addMethod('POST', createBoxesIntegration);
 
     const checkBoxIdIntegration = new apigateway.LambdaIntegration(fnApiCheckBoxIdHandler, {
-      requestTemplates: { "application/json": '{ "statusCode": "201" }' }
+      requestTemplates: { "application/json": '{ "statusCode": "200" }' }
     })
     const boxResource = boxesResource.addResource('{box_id}');
     boxResource.addMethod('GET', checkBoxIdIntegration);
