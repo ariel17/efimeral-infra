@@ -6,7 +6,8 @@
 
 ## API documentation
 
-See it here: https://ariel17.com.ar/efimeral-api/swagger/index.html
+* [Plain HTML](https://ariel17.com.ar/efimeral-api/swagger/index.html)
+* [Swagger console](https://app.swaggerhub.com/apis-docs/ariel17/efimeral/0.2.0)
 
 [AWS CDK](https://aws.amazon.com/cdk/) is used to configure cloud architecture.
 The intention is leaving none idle resources consuming money, so Fargate tasks
