@@ -4,6 +4,10 @@
 
 # Efimeral API infrastructure configuration
 
+## API documentation
+
+See it here: https://ariel17.com.ar/efimeral-api/swagger/index.html
+
 [AWS CDK](https://aws.amazon.com/cdk/) is used to configure cloud architecture.
 The intention is leaving none idle resources consuming money, so Fargate tasks
 are used for container instances and Lambdas as API handlers. Currently it
