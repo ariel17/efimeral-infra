@@ -690,7 +690,7 @@
     // Script section to load models into a JS Var
     var defs = {}
             defs["BoxCreationResponse"] = {
-  "required" : [ "box_id", "message" ],
+  "required" : [ "box_id", "message", "type" ],
   "type" : "object",
   "properties" : {
     "id" : {
@@ -701,6 +701,11 @@
     "message" : {
       "type" : "string",
       "example" : "Box created"
+    },
+    "type" : {
+      "type" : "string",
+      "example" : "alpine",
+      "enum" : [ "alpine", "ubuntu" ]
     }
   }
 };
@@ -715,6 +720,17 @@
     "url" : {
       "type" : "string",
       "example" : "http://localhost:8080"
+    }
+  }
+};
+            defs["BoxType"] = {
+  "required" : [ "type" ],
+  "type" : "object",
+  "properties" : {
+    "type" : {
+      "type" : "string",
+      "example" : "alpine",
+      "enum" : [ "alpine", "ubuntu" ]
     }
   }
 };
@@ -1140,7 +1156,8 @@ except ApiException as e:
                         <div class="pull-right"></div>
                         <div class="clearfix"></div>
                         <p></p>
-                        <p class="marked">Builds a new Linux box and returns the id. The maximum amount allowed currently is 10.</p>
+                        <p class="marked">Builds a new Linux box and returns the id. The maximum amount allowed currently is 10. Body is optional; possible values for &#x60;type&#x60; is: &quot;ubuntu&quot;, &quot;alpine&quot;.
+</p>
                         <p></p>
                         <br />
                         <pre class="prettyprint language-html prettyprinted" data-type="post"><code><span class="pln">/boxes</span></code></pre>
@@ -1165,6 +1182,7 @@ except ApiException as e:
                           <div class="tab-pane active" id="examples-Default-boxCreateInstance-0-curl">
                            <pre class="prettyprint"><code class="language-bsh">curl -X POST\
 -H "Accept: application/json"\
+-H "Content-Type: application/json"\
 "https://api.efimearl.ar/prod/boxes"</code></pre>
                           </div>
                           <div class="tab-pane" id="examples-Default-boxCreateInstance-0-java">
@@ -1181,8 +1199,9 @@ public class DefaultApiExample {
     public static void main(String[] args) {
         
         DefaultApi apiInstance = new DefaultApi();
+        BoxType body = ; // BoxType | Optional. Box type to create.
         try {
-            BoxCreationResponse result = apiInstance.boxCreateInstance();
+            BoxCreationResponse result = apiInstance.boxCreateInstance(body);
             System.out.println(result);
         } catch (ApiException e) {
             System.err.println("Exception when calling DefaultApi#boxCreateInstance");
@@ -1199,8 +1218,9 @@ public class DefaultApiExample {
 
     public static void main(String[] args) {
         DefaultApi apiInstance = new DefaultApi();
+        BoxType body = ; // BoxType | Optional. Box type to create.
         try {
-            BoxCreationResponse result = apiInstance.boxCreateInstance();
+            BoxCreationResponse result = apiInstance.boxCreateInstance(body);
             System.out.println(result);
         } catch (ApiException e) {
             System.err.println("Exception when calling DefaultApi#boxCreateInstance");
@@ -1214,12 +1234,13 @@ public class DefaultApiExample {
   <pre class="prettyprint language-json prettyprinted" data-type="json"><code>Coming Soon!</code></pre>
   </div> -->
                             <div class="tab-pane" id="examples-Default-boxCreateInstance-0-objc">
-                              <pre class="prettyprint"><code class="language-cpp">
+                              <pre class="prettyprint"><code class="language-cpp">BoxType *body = ; // Optional. Box type to create. (optional)
+
 DefaultApi *apiInstance = [[DefaultApi alloc] init];
 
 // Creates a new Linux box to expose in the web.
-[apiInstance boxCreateInstanceWithCompletionHandler: 
-              ^(BoxCreationResponse output, NSError* error) {
+[apiInstance boxCreateInstanceWith:body
+              completionHandler: ^(BoxCreationResponse output, NSError* error) {
                             if (output) {
                                 NSLog(@"%@", output);
                             }
@@ -1234,6 +1255,9 @@ DefaultApi *apiInstance = [[DefaultApi alloc] init];
                               <pre class="prettyprint"><code class="language-js">var EfimeralApi = require('efimeral_api');
 
 var api = new EfimeralApi.DefaultApi()
+var opts = { 
+  'body':  // {{BoxType}} Optional. Box type to create.
+};
 var callback = function(error, data, response) {
   if (error) {
     console.error(error);
@@ -1241,7 +1265,7 @@ var callback = function(error, data, response) {
     console.log('API called successfully. Returned data: ' + data);
   }
 };
-api.boxCreateInstance(callback);
+api.boxCreateInstance(opts, callback);
 </code></pre>
                             </div>
 
@@ -1263,11 +1287,12 @@ namespace Example
         {
 
             var apiInstance = new DefaultApi();
+            var body = new BoxType(); // BoxType | Optional. Box type to create. (optional) 
 
             try
             {
                 // Creates a new Linux box to expose in the web.
-                BoxCreationResponse result = apiInstance.boxCreateInstance();
+                BoxCreationResponse result = apiInstance.boxCreateInstance(body);
                 Debug.WriteLine(result);
             }
             catch (Exception e)
@@ -1285,9 +1310,10 @@ namespace Example
 require_once(__DIR__ . '/vendor/autoload.php');
 
 $api_instance = new Swagger\Client\ApiDefaultApi();
+$body = ; // BoxType | Optional. Box type to create.
 
 try {
-    $result = $api_instance->boxCreateInstance();
+    $result = $api_instance->boxCreateInstance($body);
     print_r($result);
 } catch (Exception $e) {
     echo 'Exception when calling DefaultApi->boxCreateInstance: ', $e->getMessage(), PHP_EOL;
@@ -1301,9 +1327,10 @@ use WWW::SwaggerClient::Configuration;
 use WWW::SwaggerClient::DefaultApi;
 
 my $api_instance = WWW::SwaggerClient::DefaultApi->new();
+my $body = WWW::SwaggerClient::Object::BoxType->new(); # BoxType | Optional. Box type to create.
 
 eval { 
-    my $result = $api_instance->boxCreateInstance();
+    my $result = $api_instance->boxCreateInstance(body => $body);
     print Dumper($result);
 };
 if ($@) {
@@ -1320,10 +1347,11 @@ from pprint import pprint
 
 # create an instance of the API class
 api_instance = swagger_client.DefaultApi()
+body =  # BoxType | Optional. Box type to create. (optional)
 
 try: 
     # Creates a new Linux box to expose in the web.
-    api_response = api_instance.box_create_instance()
+    api_response = api_instance.box_create_instance(body=body)
     pprint(api_response)
 except ApiException as e:
     print("Exception when calling DefaultApi->boxCreateInstance: %s\n" % e)</code></pre>
@@ -1334,6 +1362,50 @@ except ApiException as e:
 
 
 
+                            <div class="methodsubtabletitle">Body parameters</div>
+                            <table id="methodsubtable">
+                              <tr>
+                                <th width="150px">Name</th>
+                                <th>Description</th>
+                              </tr>
+                                <tr><td style="width:150px;">body </td>
+                                <td>
+                                
+                                
+                                <script>
+                                $(document).ready(function() {
+                                  var schemaWrapper = {
+  "description" : "Optional. Box type to create.",
+  "content" : {
+    "application/json" : {
+      "schema" : {
+        "$ref" : "#/components/schemas/BoxType"
+      }
+    }
+  },
+  "required" : false
+};
+                                  var schema = schemaWrapper.content["application/json"].schema;
+                                  if (schema.$ref != null) {
+                                    schema = defsParser.$refs.get(schema.$ref);
+                                  } else {
+                                    schemaWrapper.components = {};
+                                    schemaWrapper.components.schemas = Object.assign({}, defs);
+                                    $RefParser.dereference(schemaWrapper).catch(function(err) {
+                                      console.log(err);
+                                    });
+                                  }
+                                
+                                  var view = new JSONSchemaView(schema,2,{isBodyParam: true});
+                                  var result = $('#d2e199_boxCreateInstance_body');
+                                  result.empty();
+                                  result.append(view.render());
+                                });
+                                </script>
+                                <div id="d2e199_boxCreateInstance_body"></div>
+                                </td>
+                                </tr>
+                            </table>
 
 
 
@@ -1384,6 +1456,14 @@ except ApiException as e:
                                   </div>
                                   <input id='responses-boxCreateInstance-201-schema-data' type='hidden' value=''></input>
                                 </div>
+                            </div>
+
+                            <h3> Status: 400 - Invalid body or type. </h3>
+
+                            <ul class="nav nav-tabs nav-tabs-examples" >
+                            </ul>
+
+                            <div class="tab-content" style='margin-bottom: 10px;'>
                             </div>
 
                             <h3> Status: 429 - Too many requests. </h3>
