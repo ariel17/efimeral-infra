@@ -32,13 +32,30 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
       };
     }
 
-    const runTaskData = await runTask(ecs);
+    let tag;
+    try {
+      tag = getTypeFromBodyAndValidate(event.body);
+
+    } catch (e) {
+      console.error('Invalid request', event.body, e);
+      return {
+        statusCode: 400,
+        headers: headers,
+        body: JSON.stringify({
+          message: 'Invalid request',
+          error: e,
+        })      
+      }
+    }
+
+    const runTaskData = await runTask(ecs, tag);
     return {
       statusCode: 201,
       headers: headers,
       body: JSON.stringify({
         message: 'Box created',
         box_id: getTaskId(runTaskData.tasks[0].taskArn),
+        type: tag,
       }),
     };
 
@@ -48,7 +65,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error creating box',
-        error: `${e}`,
+        error: JSON.stringify(e),
       })
     };
   };
@@ -70,9 +87,12 @@ async function getRunningTasks(clusterArn, ecs) {
   return running.taskArns;
 }
 
-async function runTask(ecs) {
+async function runTask(ecs, tag) {
+  const taskArns = JSON.parse(process.env.TASK_DEFINITION_ARNS)
+  console.log('Task ARNs', taskArns);
+
   const params = {
-    taskDefinition: process.env.TASK_DEFINITION_ARN, 
+    taskDefinition: taskArns[tag], 
     cluster: process.env.CLUSTER_ARN,
     launchType: 'FARGATE',
     networkConfiguration: {
@@ -90,4 +110,29 @@ async function runTask(ecs) {
   console.log(`Task executed: ${JSON.stringify(data)}`);
  
   return data;
+}
+
+function getTypeFromBodyAndValidate(rawBody) {
+  if (rawBody === undefined || rawBody === null) {
+    return process.env.DEFAULT_TAG;
+  }
+
+  const body = JSON.parse(rawBody)
+  if (body.type === undefined || body.type === null) {
+    throw "Missing type";
+  }
+
+  let isValid = false;
+  const validTypes = JSON.parse(process.env.AVAILABLE_TAGS);
+  validTypes.forEach(tag => {
+    if (tag === body.type) {
+      isValid = true;
+    }
+  });
+
+  if (!isValid) {
+    throw "Invalid type";
+  }
+  
+  return body.type;
 }

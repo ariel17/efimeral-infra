@@ -2,7 +2,6 @@ import * as cdk from 'aws-cdk-lib';
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import { Template } from 'aws-cdk-lib/assertions';
 import * as Efimeral from '../lib/efimeral-stack';
-import * as lambda from "aws-cdk-lib/aws-lambda";
 
 const stackName = "MyTestStack"
 
@@ -85,20 +84,22 @@ test('Stack created', () => {
     MaxSize: '3',
   });  
 
-  template.hasResourceProperties('AWS::ECS::TaskDefinition', {
-    Cpu: '256',
-    Memory: '512',
-    RequiresCompatibilities: ['FARGATE'],
-    ContainerDefinitions: [{
-        Name: 'box',
-        Cpu: 1,
-        Essential: true,
-        MemoryReservation: 512,
-        PortMappings: [{
-            ContainerPort: 8080,
-            Protocol: ecs.Protocol.TCP,
-        }],
-    }],
+  Efimeral.imageTags.forEach(tag => {
+    template.hasResourceProperties('AWS::ECS::TaskDefinition', {
+      Cpu: '256',
+      Memory: '512',
+      RequiresCompatibilities: ['FARGATE'],
+      ContainerDefinitions: [{
+          Name: `box-${tag}`,
+          Cpu: 1,
+          Essential: true,
+          MemoryReservation: 512,
+          PortMappings: [{
+              ContainerPort: 8080,
+              Protocol: ecs.Protocol.TCP,
+          }],
+      }],
+    });
   });
 
   template.hasResourceProperties('AWS::Lambda::Function', {
