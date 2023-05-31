@@ -1,0 +1,145 @@
+{
+  "openapi" : "3.0.0",
+  "info" : {
+    "title" : "Efimeral API",
+    "description" : "This is the API that manages the creation of Linux boxes on demand.",
+    "contact" : {
+      "email" : "arielgerardorios@gmail.com"
+    },
+    "license" : {
+      "name" : "MIT",
+      "url" : "https://github.com/ariel17/efimeral-api/blob/main/LICENSE"
+    },
+    "version" : "0.2.0"
+  },
+  "servers" : [ {
+    "url" : "https://api.efimearl.ar/prod",
+    "description" : "Efimeral production API"
+  } ],
+  "paths" : {
+    "/boxes" : {
+      "post" : {
+        "summary" : "Creates a new Linux box to expose in the web.",
+        "description" : "Builds a new Linux box and returns the id. The maximum amount allowed currently is 10.",
+        "operationId" : "boxCreateInstance",
+        "responses" : {
+          "201" : {
+            "description" : "Box created.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoxCreationResponse"
+                }
+              }
+            }
+          },
+          "429" : {
+            "description" : "Too many requests."
+          },
+          "500" : {
+            "description" : "Box creation failed.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boxes/{id}" : {
+      "get" : {
+        "summary" : "Obtains the status of the given box ID, if it exists.",
+        "description" : "TODO",
+        "operationId" : "boxCheckStatus",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "description" : "Box ID to fetch status from.",
+          "required" : true,
+          "style" : "simple",
+          "explode" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "sha1",
+            "example" : "09120402431e49c8ffdbbdb90e044431e2300de4"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Box status description.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BoxStatusResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Box not found or not ready."
+          },
+          "500" : {
+            "description" : "Box check status failed.",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components" : {
+    "schemas" : {
+      "BoxCreationResponse" : {
+        "required" : [ "box_id", "message" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "sha1",
+            "example" : "09120402431e49c8ffdbbdb90e044431e2300de4"
+          },
+          "message" : {
+            "type" : "string",
+            "example" : "Box created"
+          }
+        }
+      },
+      "BoxStatusResponse" : {
+        "required" : [ "message", "url" ],
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "example" : "Box is ready"
+          },
+          "url" : {
+            "type" : "string",
+            "example" : "http://localhost:8080"
+          }
+        }
+      },
+      "ErrorResponse" : {
+        "required" : [ "error", "message" ],
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "example" : "Error message"
+          },
+          "error" : {
+            "type" : "string",
+            "example" : "Error detail"
+          }
+        }
+      }
+    }
+  }
+}
