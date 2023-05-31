@@ -165,7 +165,14 @@ export class APIStack extends cdk.Stack {
 
     const api = new apigateway.RestApi(this, "boxes-api", {
       restApiName: "Efimeral service API",
-      description: "Linux boxes on demand."
+      description: "Linux boxes on demand.",
+      defaultCorsPreflightOptions: {
+        allowHeaders: [
+          'Content-Type',
+        ],
+        allowMethods: ['OPTIONS', 'POST', 'GET'],
+        allowOrigins: ['http://localhost:3000', 'http://efimeral.ar', 'https://efimeral.ar'],
+      },
     });
 
     const createBoxesIntegration = new apigateway.LambdaIntegration(fnApiCreateBoxHandler, {
