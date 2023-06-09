@@ -9,6 +9,12 @@ Sentry.AWSLambda.init({
   timeoutWarningLimit: 40000,
 });
 
+const ports = {
+  'box-vscode': 8080,
+  'box-alpine': 8080,
+  'box-ubuntu': 8080,
+}
+
 exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
   let headers = {
       "Access-Control-Allow-Headers" : "Content-Type",
@@ -32,7 +38,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
       };
     }
 
-    const containerURL = await getContainerURL(task.attachments[0].details);
+    const containerURL = await getContainerURL(task);
     return {
       statusCode: 200,
       headers: headers,
@@ -73,7 +79,8 @@ async function getRunningTaskById(clusterArn, taskId, ecs) {
   return undefined;
 }
 
-async function getContainerURL(details) {
+async function getContainerURL(task) {
+  const details = task.attachments[0].details;
   let eni = '';
   for (let i = 0; i < details.length; i++) {
     if (details[i].name === 'networkInterfaceId') {
@@ -94,5 +101,5 @@ async function getContainerURL(details) {
   const data = await ec2.describeNetworkInterfaces(params);
   console.log(`Network data: ${JSON.stringify(data)}`);
   
-  return `http://${data.NetworkInterfaces[0].Association.PublicDnsName}:${process.env.CONTAINER_PORT}`
+  return `http://${data.NetworkInterfaces[0].Association.PublicDnsName}:${ports[task.containers[0].name]}`
 }

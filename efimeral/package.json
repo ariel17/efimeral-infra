@@ -15,9 +15,10 @@
     "@aws-sdk/client-ec2": "^3.332.0",
     "@aws-sdk/client-ecs": "^3.338.0",
     "@types/jest": "^27.5.2",
-    "@types/node": "10.17.27",
+    "@types/mocha": "^10.0.1",
+    "@types/node": "^10.17.27",
     "@types/prettier": "2.6.0",
-    "aws-cdk": "2.80.0",
+    "aws-cdk": "^2.80.0",
     "aws-sdk-client-mock": "^2.1.1",
     "esbuild": "^0.17.19",
     "jest": "^27.5.1",
@@ -30,6 +31,7 @@
     "adm-zip": "^0.5.10",
     "aws-cdk-lib": "2.80.0",
     "constructs": "^10.0.0",
+    "crypto": "^1.0.1",
     "source-map-support": "^0.5.21"
   }
 }

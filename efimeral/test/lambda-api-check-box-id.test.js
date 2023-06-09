@@ -34,6 +34,11 @@ describe("Check box running state by ID", () => {
 					value: 'fakeNetworkId',
 				}]
 			}],
+			containers: [{
+				networkBindings: [{
+					containerPort: 8080,
+				}]
+			}],
 			lastStatus: 'RUNNING',
 			desiredStatus: 'RUNNING',
 		}],
@@ -81,6 +86,11 @@ describe("Check box running state by ID", () => {
 		tasks: [{
 			attachments: [{
 				details: []
+			}],
+			containers: [{
+				networkBindings: [{
+					containerPort: 8080,
+				}]
 			}],
 			lastStatus: 'RUNNING',
 			desiredStatus: 'RUNNING',

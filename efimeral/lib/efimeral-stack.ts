@@ -14,13 +14,17 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as crypto from 'crypto';
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
-export const containerPort = 8080;
 export const containerTimeoutMinutes = 10;
 export const apiSubdomain = 'api.efimeral.ar';
-export const imageTags = ['alpine', 'ubuntu']
+export const images = [
+  {tag: 'alpine', ecr: true, port: 8080},
+  {tag: 'ubuntu', ecr: true, port: 8080},
+  {tag: 'vscode', ecr: false, port: 8080, image: 'codercom/code-server', environment: {}},
+]
 
 export class APIStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -64,30 +68,39 @@ export class APIStack extends cdk.Stack {
 
     const tasks: { [key: string]: ecs.TaskDefinition } = {};
     const taskArns: { [key: string]: string} = {};
-    imageTags.forEach(tag => {
-      const task = new ecs.TaskDefinition(this, `box-task-${tag}`, {
+    images.forEach(tag => {
+      const task = new ecs.TaskDefinition(this, `box-task-${tag.tag}`, {
         compatibility: ecs.Compatibility.FARGATE,
         cpu: '256',
         memoryMiB: '512',
       });
-      task.addContainer(`box-${tag}`, {
-        image: ecs.ContainerImage.fromEcrRepository(repository, tag),
+
+      let image;
+      if (tag.ecr) {
+        image = ecs.ContainerImage.fromEcrRepository(repository, tag.tag);
+      } else {
+        image = ecs.ContainerImage.fromRegistry(`${tag.image}:latest`);
+      }
+
+      task.addContainer(`box-${tag.tag}`, {
+        image: image,
         cpu: 1,
         memoryReservationMiB: 512,
         portMappings: [
           {
-            containerPort: containerPort,
+            containerPort: tag.port,
             protocol: ecs.Protocol.TCP,
           },
         ],
         logging: ecs.LogDrivers.awsLogs({
-          streamPrefix: `box-${tag}`,
+          streamPrefix: `box-${tag.tag}`,
           logRetention: logs.RetentionDays.ONE_WEEK,
         }),
+        environment: tag.environment,
       });
 
-      tasks[tag] = task;
-      taskArns[tag] = task.taskDefinitionArn;
+      tasks[tag.tag] = task;
+      taskArns[tag.tag] = task.taskDefinitionArn;
     });
 
     const sentryDSN = secretsmanager.Secret.fromSecretNameV2(
@@ -109,7 +122,7 @@ export class APIStack extends cdk.Stack {
         MAX_ALLOWED_RUNNING_TASKS: "10",
         TASK_DEFINITION_ARNS: JSON.stringify(taskArns),
         DEFAULT_TAG: 'alpine',
-        AVAILABLE_TAGS: JSON.stringify(imageTags),
+        AVAILABLE_TAGS: JSON.stringify(images.map(tag => tag.tag)),
         SUBNET_ID: vpc.publicSubnets[0].subnetId,
         SECURITY_GROUP_ID: sg.securityGroupId,
       },
@@ -123,7 +136,7 @@ export class APIStack extends cdk.Stack {
       },
     });
 
-    imageTags.forEach(tag => tasks[tag].grantRun(fnApiCreateBoxHandler));
+    images.forEach(tag => tasks[tag.tag].grantRun(fnApiCreateBoxHandler));
 
     const fnApiCheckBoxIdHandler = new lambdaNodeJS.NodejsFunction(this, 'api-check-box-id', {
       description: 'Checks RUNNING state for box ID and returns its public URL if exists',
@@ -137,7 +150,6 @@ export class APIStack extends cdk.Stack {
         LAMBDAS_SENTRY_DSN: sentryDSN,
         CORS_DISABLED: "true",
         CLUSTER_ARN: cluster.clusterArn,
-        CONTAINER_PORT: `${containerPort}`,
       },
       bundling: {
         esbuildArgs: {
