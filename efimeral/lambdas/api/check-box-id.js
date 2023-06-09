@@ -32,7 +32,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
       };
     }
 
-    const containerURL = await getContainerURL(task.attachments[0].details);
+    const containerURL = await getContainerURL(task.attachments[0].details, task.containers[0].networkBindings[0].containerPort);
     return {
       statusCode: 200,
       headers: headers,
@@ -73,7 +73,7 @@ async function getRunningTaskById(clusterArn, taskId, ecs) {
   return undefined;
 }
 
-async function getContainerURL(details) {
+async function getContainerURL(details, containerPort) {
   let eni = '';
   for (let i = 0; i < details.length; i++) {
     if (details[i].name === 'networkInterfaceId') {
@@ -94,5 +94,5 @@ async function getContainerURL(details) {
   const data = await ec2.describeNetworkInterfaces(params);
   console.log(`Network data: ${JSON.stringify(data)}`);
   
-  return `http://${data.NetworkInterfaces[0].Association.PublicDnsName}:${process.env.CONTAINER_PORT}`
+  return `http://${data.NetworkInterfaces[0].Association.PublicDnsName}:${containerPort}`
 }

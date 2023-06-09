@@ -84,18 +84,18 @@ test('Stack created', () => {
     MaxSize: '3',
   });  
 
-  Efimeral.imageTags.forEach(tag => {
+  Efimeral.images.forEach(tag => {
     template.hasResourceProperties('AWS::ECS::TaskDefinition', {
       Cpu: '256',
       Memory: '512',
       RequiresCompatibilities: ['FARGATE'],
       ContainerDefinitions: [{
-          Name: `box-${tag}`,
+          Name: `box-${tag.tag}`,
           Cpu: 1,
           Essential: true,
           MemoryReservation: 512,
           PortMappings: [{
-              ContainerPort: 8080,
+              ContainerPort: tag.port,
               Protocol: ecs.Protocol.TCP,
           }],
       }],

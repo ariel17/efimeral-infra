@@ -4,7 +4,7 @@ const { mockClient } = require("aws-sdk-client-mock");
 const lambdaFunction = require("../lambdas/api/create-box");
 
 const ecsMock = mockClient(ECSClient);
-const validTags = ["alpine", "ubuntu"];
+const validTags = ["alpine", "ubuntu", "vscode"];
 
 describe("Create box", () => {
   const ENV = process.env;
@@ -16,6 +16,7 @@ describe("Create box", () => {
 	process.env.TASK_DEFINITION_ARNS = JSON.stringify({
 		alpine: 'fakeArn1',
 		ubuntu: 'fakeArn2',
+		vscode: 'fakeArn3'
 	});
   });
 
