@@ -21,9 +21,10 @@ export const ecrRepositoyName = 'efimeral-boxes';
 export const containerTimeoutMinutes = 10;
 export const apiSubdomain = 'api.efimeral.ar';
 export const images = [
-  {tag: 'alpine', ecr: true, port: 8080},
-  {tag: 'ubuntu', ecr: true, port: 8080},
-  {tag: 'vscode', ecr: false, port: 8080, image: 'codercom/code-server', environment: {}},
+  {tag: 'alpine', ecr: true, port: 8080, image: '', environment: {}},
+  {tag: 'ubuntu', ecr: true, port: 8080, image: '', environment: {}},
+  {tag: 'vscode', ecr: true, port: 8080, image: '', environment: {}},
+  // {tag: 'other', ecr: false, port: 8000, image: 'codercom/code-server', environment: {}},
 ]
 
 export class APIStack extends cdk.Stack {
