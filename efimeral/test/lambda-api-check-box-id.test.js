@@ -35,9 +35,7 @@ describe("Check box running state by ID", () => {
 				}]
 			}],
 			containers: [{
-				networkBindings: [{
-					containerPort: 8080,
-				}]
+				name: 'box-ubuntu',
 			}],
 			lastStatus: 'RUNNING',
 			desiredStatus: 'RUNNING',
@@ -88,6 +86,7 @@ describe("Check box running state by ID", () => {
 				details: []
 			}],
 			containers: [{
+				name: 'box-ubuntu',
 				networkBindings: [{
 					containerPort: 8080,
 				}]
