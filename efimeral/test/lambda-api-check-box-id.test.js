@@ -98,7 +98,7 @@ describe("Check box running state by ID", () => {
 
     const result = await lambdaFunction.handler(event, {callbackWaitsForEmptyEventLoop: false});
     expect(result).toStrictEqual({
-		"body": "{\"message\":\"Error creating box\",\"error\":\"Cannot obtain network interface ID\"}",
+		"body": "{\"message\":\"Error checking box\",\"error\":\"Cannot obtain network interface ID\"}",
 		"statusCode": 500
 	});
   });

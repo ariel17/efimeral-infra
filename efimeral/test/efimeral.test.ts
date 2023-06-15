@@ -76,7 +76,7 @@ test('Stack created', () => {
   });
   
   template.hasResourceProperties('AWS::AutoScaling::LaunchConfiguration', {
-    InstanceType: 't2.nano',
+    InstanceType: 't2.micro',
   });
   
   template.hasResourceProperties('AWS::AutoScaling::AutoScalingGroup', {
@@ -85,19 +85,20 @@ test('Stack created', () => {
   });  
 
   Efimeral.images.forEach(tag => {
+    
     template.hasResourceProperties('AWS::ECS::TaskDefinition', {
       Cpu: '256',
       Memory: '512',
-      RequiresCompatibilities: ['FARGATE'],
+      RequiresCompatibilities: [tag.compatibility === ecs.Compatibility.FARGATE ? 'FARGATE' : 'EC2'],
       ContainerDefinitions: [{
           Name: `box-${tag.tag}`,
           Cpu: 1,
           Essential: true,
           MemoryReservation: 512,
-          PortMappings: [{
-              ContainerPort: tag.port,
-              Protocol: ecs.Protocol.TCP,
-          }],
+          // PortMappings: [{
+          //     ContainerPort: tag.port,
+          //     Protocol: ecs.Protocol.TCP,
+          // }],
       }],
     });
   });

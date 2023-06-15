@@ -13,10 +13,20 @@ describe("Create box", () => {
 	ecsMock.reset();
 	process.env.DEFAULT_TAG = 'alpine';
 	process.env.AVAILABLE_TAGS = JSON.stringify(validTags);
-	process.env.TASK_DEFINITION_ARNS = JSON.stringify({
-		alpine: 'fakeArn1',
-		ubuntu: 'fakeArn2',
-		vscode: 'fakeArn3'
+	process.env.MAX_ALLOWED_RUNNING_TASKS = 1;
+	process.env.TASK_DETAILS = JSON.stringify({
+		alpine: {
+			arn: 'fakeArn1',
+			launchType: 'FARGATE',
+		},
+		ubuntu: {
+			arn: 'fakeArn2',
+			launchType: 'FARGATE',
+		},
+		vscode: {
+			arn: 'fakeArn3',
+			launchType: 'EC2',
+		},
 	});
   });
 
@@ -123,4 +133,24 @@ describe("Create box", () => {
 		},
 	});
   });
+
+  test("should return 500 when box creation fails for some reason", async () => {
+    ecsMock.on(ListTasksCommand).resolves({
+		taskArns: [],
+	});
+    ecsMock.on(RunTaskCommand).resolves({
+		tasks: [],
+		failures: [{
+			reason: 'This is why it failed',
+		}],
+	});
+	const event = {
+		body: JSON.stringify({ type: 'vscode' }),
+	}
+	const result = await lambdaFunction.handler(event, {callbackWaitsForEmptyEventLoop: false});
+	expect(result).toStrictEqual({
+		"body": "{\"message\":\"Error creating box\",\"error\":\"This is why it failed\"}", 
+		"statusCode": 500
+	});
+  }); 
 });
