@@ -53,7 +53,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
     return {
       statusCode: 500,
       body: JSON.stringify({
-        message: 'Error creating box',
+        message: 'Error checking box',
         error: `${e}`,
       })
     };

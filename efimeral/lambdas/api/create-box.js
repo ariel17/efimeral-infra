@@ -49,6 +49,10 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
     }
 
     const runTaskData = await runTask(ecs, tag);
+    if (runTaskData.tasks.length === 0) {
+      throw String(runTaskData.failures[0].reason);
+    }
+
     return {
       statusCode: 201,
       headers: headers,
@@ -65,7 +69,7 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
       statusCode: 500,
       body: JSON.stringify({
         message: 'Error creating box',
-        error: JSON.stringify(e),
+        error: e,
       })
     };
   };
@@ -88,22 +92,27 @@ async function getRunningTasks(clusterArn, ecs) {
 }
 
 async function runTask(ecs, tag) {
-  const taskArns = JSON.parse(process.env.TASK_DEFINITION_ARNS)
-  console.log('Task ARNs', taskArns);
+  const taskDetails = JSON.parse(process.env.TASK_DETAILS)
+  console.log('Task details', taskDetails);
 
-  const params = {
-    taskDefinition: taskArns[tag], 
-    cluster: process.env.CLUSTER_ARN,
-    launchType: 'FARGATE',
-    networkConfiguration: {
+  let networkConfig = undefined;
+  if (taskDetails[tag].launchType === 'FARGATE') {
+    networkConfig = {
       awsvpcConfiguration: {
         assignPublicIp: 'ENABLED',
         subnets: [process.env.SUBNET_ID],
         securityGroups: [process.env.SECURITY_GROUP_ID]
       }
-    },
+    };
+  }
+
+  const params = {
+    taskDefinition: taskDetails[tag].arn, 
+    cluster: process.env.CLUSTER_ARN,
+    launchType: taskDetails[tag].launchType,
+    networkConfiguration: networkConfig,
     count: 1,
-    startedBy: 'lambda-function'
+    startedBy: 'lambda-create-box'
   };
 
   var data = await ecs.runTask(params);

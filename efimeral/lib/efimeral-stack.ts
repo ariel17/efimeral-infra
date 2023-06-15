@@ -14,17 +14,17 @@ import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-import * as crypto from 'crypto';
 
 
 export const ecrRepositoyName = 'efimeral-boxes';
 export const containerTimeoutMinutes = 10;
 export const apiSubdomain = 'api.efimeral.ar';
 export const images = [
-  {tag: 'alpine', ecr: true, port: 8080, image: '', environment: {}},
-  {tag: 'ubuntu', ecr: true, port: 8080, image: '', environment: {}},
-  {tag: 'vscode', ecr: true, port: 8080, image: '', environment: {}},
-  // {tag: 'other', ecr: false, port: 8000, image: 'codercom/code-server', environment: {}},
+  {tag: 'alpine', ecr: true, compatibility: ecs.Compatibility.FARGATE, privileged: false, port: 8080, portRange: undefined, image: '', environment: {}},
+  {tag: 'ubuntu', ecr: true, compatibility: ecs.Compatibility.FARGATE, privileged: false, port: 8080, portRange: undefined, image: '', environment: {}},
+  {tag: 'vscode', ecr: true, compatibility: ecs.Compatibility.FARGATE, privileged: false, port: 8080, portRange: undefined, image: '', environment: {}},
+  {tag: 'dind', ecr: true, compatibility: ecs.Compatibility.EC2, privileged: true, port: undefined, portRange:{startPort: 8080, endPort: 8090}, image: '', environment: {}},
+  // {tag: 'other', ecr: false, compatibility: ecs.Compatibility.FARGATE, privileged: false, port: 8000, portRange: undefined, image: 'codercom/code-server', environment: {}},
 ]
 
 export class APIStack extends cdk.Stack {
@@ -60,18 +60,18 @@ export class APIStack extends cdk.Stack {
       clusterName: 'boxes-cluster',
       containerInsights: true,
       capacity: {
-        instanceType: new ec2.InstanceType('t2.nano'),
-        minCapacity: 0,
-        maxCapacity: 3,
+        instanceType: new ec2.InstanceType('t2.micro'),
+        minCapacity: 0,  // CHANGE THIS to 1 to support EC2 tasks
+        maxCapacity: 0,  // CHANGE THIS to 1 to support EC2 tasks
       },
       vpc: vpc
     });    
 
     const tasks: { [key: string]: ecs.TaskDefinition } = {};
-    const taskArns: { [key: string]: string} = {};
+    const taskDetails: { [key: string]: any} = {};
     images.forEach(tag => {
       const task = new ecs.TaskDefinition(this, `box-task-${tag.tag}`, {
-        compatibility: ecs.Compatibility.FARGATE,
+        compatibility: tag.compatibility,
         cpu: '256',
         memoryMiB: '512',
       });
@@ -83,25 +83,41 @@ export class APIStack extends cdk.Stack {
         image = ecs.ContainerImage.fromRegistry(`${tag.image}:latest`);
       }
 
-      task.addContainer(`box-${tag.tag}`, {
+      const container = task.addContainer(`box-${tag.tag}`, {
         image: image,
         cpu: 1,
         memoryReservationMiB: 512,
-        portMappings: [
-          {
-            containerPort: tag.port,
-            protocol: ecs.Protocol.TCP,
-          },
-        ],
         logging: ecs.LogDrivers.awsLogs({
           streamPrefix: `box-${tag.tag}`,
           logRetention: logs.RetentionDays.ONE_WEEK,
         }),
         environment: tag.environment,
+        privileged: tag.privileged,
       });
+    
+      if (tag.port !== undefined) {
+        container.addPortMappings({
+          containerPort: tag.port,
+          protocol: ecs.Protocol.TCP,
+        });
+      }
+    
+      if (tag.portRange !== undefined) {
+        const portMappings: ecs.PortMapping[] = [];
+        for (let i = tag.portRange.startPort; i <= tag.portRange.endPort; i++) {
+          portMappings.push({
+            containerPort: i,
+            protocol: ecs.Protocol.TCP,
+          });
+        }
+        container.addPortMappings(...portMappings);
+      }
 
       tasks[tag.tag] = task;
-      taskArns[tag.tag] = task.taskDefinitionArn;
+      taskDetails[tag.tag] = {
+        arn: task.taskDefinitionArn,
+        launchType: tag.compatibility === ecs.Compatibility.FARGATE ? 'FARGATE' : 'EC2',
+      };
     });
 
     const sentryDSN = secretsmanager.Secret.fromSecretNameV2(
@@ -121,7 +137,7 @@ export class APIStack extends cdk.Stack {
         CORS_DISABLED: "true",
         CLUSTER_ARN: cluster.clusterArn,
         MAX_ALLOWED_RUNNING_TASKS: "10",
-        TASK_DEFINITION_ARNS: JSON.stringify(taskArns),
+        TASK_DETAILS: JSON.stringify(taskDetails),
         DEFAULT_TAG: 'alpine',
         AVAILABLE_TAGS: JSON.stringify(images.map(tag => tag.tag)),
         SUBNET_ID: vpc.publicSubnets[0].subnetId,
