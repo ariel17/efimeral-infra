@@ -6,4 +6,7 @@ module.exports = {
     '^.+\\.tsx?$': 'ts-jest'
   },
   setupFiles: ['<rootDir>/.jest/setEnvVars.js'],
+    moduleNameMapper: {
+    '/opt/nodejs/running-tasks': '<rootDir>/lambdas/layers/running-tasks/nodejs/running-tasks',
+  },
 };

@@ -1,5 +1,6 @@
 const { ECS } = require("@aws-sdk/client-ecs");
 const Sentry = require("@sentry/serverless");
+const { getRunningTasks } = require('/opt/nodejs/running-tasks');
 
 
 Sentry.AWSLambda.init({
@@ -78,17 +79,6 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
 function getTaskId(taskArn) {
   const parts = taskArn.split('/');
   return parts[parts.length - 1];
-}
-
-async function getRunningTasks(clusterArn, ecs) {
-  const params = {
-    cluster: clusterArn,
-    desiredStatus: 'RUNNING',
-  };
-  var running = await ecs.listTasks(params);
-  console.log(`Tasks running: ${JSON.stringify(running)}`);
- 
-  return running.taskArns;
 }
 
 async function runTask(ecs, tag) {
