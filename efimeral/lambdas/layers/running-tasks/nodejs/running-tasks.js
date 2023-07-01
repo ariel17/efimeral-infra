@@ -1,10 +1,21 @@
-export const boxPorts = {
+const boxPorts = {
   'box-vscode': 8080,
   'box-alpine': 8080,
   'box-ubuntu': 8080,
 }
 
-export async function getRunningTaskById(clusterArn, taskId, ecs) {
+async function getRunningTasks(clusterArn, ecs) {
+  const params = {
+    cluster: clusterArn,
+    desiredStatus: 'RUNNING',
+  };
+  var running = await ecs.listTasks(params);
+  console.log(`Tasks running: ${JSON.stringify(running)}`);
+ 
+  return running.taskArns;
+}
+
+async function getRunningTaskById(clusterArn, taskId, ecs) {
   const params = {
     cluster: clusterArn,
     tasks: [taskId,]
@@ -23,7 +34,7 @@ export async function getRunningTaskById(clusterArn, taskId, ecs) {
   return undefined;
 }
 
-export async function getNetworkData(task, ec2) {
+async function getNetworkData(task, ec2) {
   const details = task.attachments[0].details;
   let eni = '';
   for (let i = 0; i < details.length; i++) {
@@ -46,3 +57,5 @@ export async function getNetworkData(task, ec2) {
   
   return data.NetworkInterfaces[0];
 }
+
+module.exports = { boxPorts, getRunningTasks, getRunningTaskById, getNetworkData };

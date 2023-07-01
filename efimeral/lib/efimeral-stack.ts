@@ -244,7 +244,11 @@ export class APIStack extends cdk.Stack {
         nodeModules: [
           '@sentry/serverless',
         ],
+        externalModules: [
+          '/opt/nodejs/running-tasks',
+        ],
       },
+      layers: [runningTasksLayer,]
     });
 
     const fnKillerPolicy = new iam.PolicyStatement({
