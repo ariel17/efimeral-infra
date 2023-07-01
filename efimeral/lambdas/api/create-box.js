@@ -1,5 +1,6 @@
 const { ECS } = require("@aws-sdk/client-ecs");
 const Sentry = require("@sentry/serverless");
+import { boxPorts } from '/opt/nodejs/running-tasks';
 
 
 Sentry.AWSLambda.init({
