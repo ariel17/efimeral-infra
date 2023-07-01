@@ -21,7 +21,10 @@
     "strictPropertyInitialization": false,
     "typeRoots": [
       "./node_modules/@types"
-    ]
+    ],
+    "paths": {
+      "/opt/nodejs/running-tasks": ["./layers/running-tasks/nodejs/running-tasks"]
+    }
   },
   "exclude": [
     "node_modules",
