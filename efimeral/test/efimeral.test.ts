@@ -81,7 +81,7 @@ test('Stack created', () => {
   
   template.hasResourceProperties('AWS::AutoScaling::AutoScalingGroup', {
     MinSize: '0',
-    MaxSize: '3',
+    MaxSize: '0',
   });  
 
   Efimeral.images.forEach(tag => {
