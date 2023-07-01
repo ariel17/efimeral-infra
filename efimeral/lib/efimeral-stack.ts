@@ -124,6 +124,14 @@ export class APIStack extends cdk.Stack {
       this, 'sentry-dsn', 'lambdasSentryDSN'
     ).secretValue.unsafeUnwrap().toString();
 
+    const runningTasksLayer = new lambda.LayerVersion(this, 'running-tasks-layer', {
+      compatibleRuntimes: [
+        lambda.Runtime.NODEJS_18_X,
+      ],
+      code: lambda.Code.fromAsset('./lambdas/layers/running-tasks'),
+      description: 'Adds handy methods to work with running tasks.',
+    });
+
     const fnApiCreateBoxHandler = new lambdaNodeJS.NodejsFunction(this, 'api-create-box', {
       description: 'Creates new instances on Fargate cluster and returns the task ID as box ID.',
       runtime: lambda.Runtime.NODEJS_18_X,
@@ -144,13 +152,14 @@ export class APIStack extends cdk.Stack {
         SECURITY_GROUP_ID: sg.securityGroupId,
       },
       bundling: {
-        esbuildArgs: {
-          '--alias:@layer': './lambdas/layers/listtasks/nodejs',
-        },
         nodeModules: [
           '@sentry/serverless',
         ],
+        externalModules: [
+          '/opt/nodejs/running-tasks',
+        ],
       },
+      layers: [runningTasksLayer,]
     });
 
     images.forEach(tag => tasks[tag.tag].grantRun(fnApiCreateBoxHandler));
@@ -169,13 +178,14 @@ export class APIStack extends cdk.Stack {
         CLUSTER_ARN: cluster.clusterArn,
       },
       bundling: {
-        esbuildArgs: {
-          '--alias:@layer': './lambdas/layers/listtasks/nodejs',
-        },
         nodeModules: [
           '@sentry/serverless',
         ],
+        externalModules: [
+          '/opt/nodejs/running-tasks',
+        ],
       },
+      layers: [runningTasksLayer,]
     });
 
     const fnApiCreateBoxPolicy = new iam.PolicyStatement({
@@ -231,9 +241,6 @@ export class APIStack extends cdk.Stack {
         LAMBDAS_SENTRY_DSN: sentryDSN,
       },
       bundling: {
-        esbuildArgs: {
-          '--alias:@layer': './lambdas/layers/listtasks/nodejs',
-        },
         nodeModules: [
           '@sentry/serverless',
         ],
