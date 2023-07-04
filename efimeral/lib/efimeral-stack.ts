@@ -15,17 +15,14 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53Targets from 'aws-cdk-lib/aws-route53-targets';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 
+import * as boxesvpc from './constructs/boxes-vpc';
+import * as boxtask from './constructs/box-task';
+
 
 export const ecrRepositoyName = 'efimeral-boxes';
 export const containerTimeoutMinutes = 10;
 export const apiSubdomain = 'api.efimeral.ar';
-export const images = [
-  {tag: 'alpine', ecr: true, compatibility: ecs.Compatibility.FARGATE, privileged: false, port: 8080, portRange: undefined, image: '', environment: {}},
-  {tag: 'ubuntu', ecr: true, compatibility: ecs.Compatibility.FARGATE, privileged: false, port: 8080, portRange: undefined, image: '', environment: {}},
-  {tag: 'vscode', ecr: true, compatibility: ecs.Compatibility.FARGATE, privileged: false, port: 8080, portRange: undefined, image: '', environment: {}},
-  {tag: 'dind', ecr: true, compatibility: ecs.Compatibility.EC2, privileged: true, port: undefined, portRange:{startPort: 8080, endPort: 8090}, image: '', environment: {}},
-  // {tag: 'other', ecr: false, compatibility: ecs.Compatibility.FARGATE, privileged: false, port: 8000, portRange: undefined, image: 'codercom/code-server', environment: {}},
-]
+
 
 export class APIStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -37,24 +34,7 @@ export class APIStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    const vpc = new ec2.Vpc(this, 'boxes-vpc', {
-      maxAzs: 3,
-      natGateways: 0,
-      subnetConfiguration: [
-        {
-          name: 'boxes-public-subnet',
-          subnetType: ec2.SubnetType.PUBLIC,
-        },
-      ],
-    });
-
-    const sg = new ec2.SecurityGroup(this, 'boxes-vpc-sg', {
-      vpc: vpc,
-      allowAllOutbound: true,
-      description: 'Security group for boxes VPC',
-    });
-    sg.addIngressRule(ec2.Peer.anyIpv4(), ec2.Port.allTcp(), 'Allow access from any IPv4 to all ports');
-    sg.addIngressRule(ec2.Peer.anyIpv6(), ec2.Port.allTcp(), 'Allow access from any IPv6 to all ports');
+    const boxesVpc = new boxesvpc.BoxesVpc(this, 'boxes-vpc', { maxAzs: 3});
 
     const cluster = new ecs.Cluster(this, 'boxes-cluster', {
       clusterName: 'boxes-cluster',
@@ -64,59 +44,25 @@ export class APIStack extends cdk.Stack {
         minCapacity: 0,  // CHANGE THIS to 1 to support EC2 tasks
         maxCapacity: 0,  // CHANGE THIS to 1 to support EC2 tasks
       },
-      vpc: vpc
+      vpc: boxesVpc.vpc
     });    
+
+    const images: boxtask.BoxTaskProps[] = [
+      {name: 'alpine', compatibility: ecs.Compatibility.FARGATE, repository: repository, exposePort: 8080, },
+      {name: 'ubuntu', compatibility: ecs.Compatibility.FARGATE, repository: repository, exposePort: 8080, },
+      {name: 'vscode', compatibility: ecs.Compatibility.FARGATE, repository: repository, exposePort: 8080, },
+      {name: 'dind', compatibility: ecs.Compatibility.EC2, repository: repository, containerIsPrivileged: true, exposeFromPort: 8080, exposeToPort: 8090, },
+    ]
 
     const tasks: { [key: string]: ecs.TaskDefinition } = {};
     const taskDetails: { [key: string]: any} = {};
-    images.forEach(tag => {
-      const task = new ecs.TaskDefinition(this, `box-task-${tag.tag}`, {
-        compatibility: tag.compatibility,
-        cpu: '256',
-        memoryMiB: '512',
-      });
 
-      let image;
-      if (tag.ecr) {
-        image = ecs.ContainerImage.fromEcrRepository(repository, tag.tag);
-      } else {
-        image = ecs.ContainerImage.fromRegistry(`${tag.image}:latest`);
-      }
-
-      const container = task.addContainer(`box-${tag.tag}`, {
-        image: image,
-        cpu: 1,
-        memoryReservationMiB: 512,
-        logging: ecs.LogDrivers.awsLogs({
-          streamPrefix: `box-${tag.tag}`,
-          logRetention: logs.RetentionDays.ONE_WEEK,
-        }),
-        environment: tag.environment,
-        privileged: tag.privileged,
-      });
-    
-      if (tag.port !== undefined) {
-        container.addPortMappings({
-          containerPort: tag.port,
-          protocol: ecs.Protocol.TCP,
-        });
-      }
-    
-      if (tag.portRange !== undefined) {
-        const portMappings: ecs.PortMapping[] = [];
-        for (let i = tag.portRange.startPort; i <= tag.portRange.endPort; i++) {
-          portMappings.push({
-            containerPort: i,
-            protocol: ecs.Protocol.TCP,
-          });
-        }
-        container.addPortMappings(...portMappings);
-      }
-
-      tasks[tag.tag] = task;
-      taskDetails[tag.tag] = {
-        arn: task.taskDefinitionArn,
-        launchType: tag.compatibility === ecs.Compatibility.FARGATE ? 'FARGATE' : 'EC2',
+    images.forEach(props => {
+      const task = new boxtask.BoxTask(this, `${props.name}-box`, props);
+      tasks[props.name] = task.task;
+      taskDetails[props.name] = {
+        arn: task.task.taskDefinitionArn,
+        launchType: task.compatibilityString,
       };
     });
 
@@ -147,9 +93,9 @@ export class APIStack extends cdk.Stack {
         MAX_ALLOWED_RUNNING_TASKS: "10",
         TASK_DETAILS: JSON.stringify(taskDetails),
         DEFAULT_TAG: 'alpine',
-        AVAILABLE_TAGS: JSON.stringify(images.map(tag => tag.tag)),
-        SUBNET_ID: vpc.publicSubnets[0].subnetId,
-        SECURITY_GROUP_ID: sg.securityGroupId,
+        AVAILABLE_TAGS: JSON.stringify(images.map(props => props.name)),
+        SUBNET_ID: boxesVpc.vpc.publicSubnets[0].subnetId,
+        SECURITY_GROUP_ID: boxesVpc.sg.securityGroupId,
       },
       bundling: {
         nodeModules: [
@@ -162,7 +108,7 @@ export class APIStack extends cdk.Stack {
       layers: [runningTasksLayer,]
     });
 
-    images.forEach(tag => tasks[tag.tag].grantRun(fnApiCreateBoxHandler));
+    images.forEach(props => tasks[props.name].grantRun(fnApiCreateBoxHandler));
 
     const fnApiCheckBoxIdHandler = new lambdaNodeJS.NodejsFunction(this, 'api-check-box-id', {
       description: 'Checks RUNNING state for box ID and returns its public URL if exists',
