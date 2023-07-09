@@ -45,7 +45,7 @@ export class BoxTask extends Construct {
         }
         this.image = image;
   
-        const container = task.addContainer(`container-${props.name}`, {
+        const container = task.addContainer(props.name, {
           image: image,
           cpu: 1,
           memoryReservationMiB: 512,
