@@ -1,7 +1,7 @@
 const boxPorts = {
-  'box-vscode': 8080,
-  'box-alpine': 8080,
-  'box-ubuntu': 8080,
+  'vscode': 8080,
+  'alpine': 8080,
+  'ubuntu': 8080,
 }
 
 async function getRunningTasks(clusterArn, ecs) {
