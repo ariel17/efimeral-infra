@@ -30,16 +30,9 @@ export class APIStack extends cdk.Stack {
       {name: 'dind', compatibility: ecs.Compatibility.EC2, repository: infra.repository, containerIsPrivileged: true, exposeFromPort: 8080, exposeToPort: 8090, },
     ]
 
-    const tasks: { [key: string]: ecs.TaskDefinition } = {};
-    const taskDetails: { [key: string]: any } = {};
-
+    const tasks: boxtask.BoxTask[] = [];
     images.forEach(props => {
-      const task = new boxtask.BoxTask(this, `box-task-${props.name}`, props);
-      tasks[props.name] = task.task;
-      taskDetails[props.name] = {
-        arn: task.task.taskDefinitionArn,
-        launchType: task.compatibilityString,
-      };
+      tasks.push(new boxtask.BoxTask(this, `box-task-${props.name}`, props));
     });
 
     const sentryDSN = secretsmanager.Secret.fromSecretNameV2(
@@ -61,10 +54,8 @@ export class APIStack extends cdk.Stack {
       cluster: infra.cluster,
       layers: [runningTasksLayer,],
       availableTags: images.map(props => props.name),
-      taskDetails: taskDetails,
+      tasks: tasks,
     });
-
-    images.forEach(props => tasks[props.name].grantRun(fnApiCreateBox.fn));
 
     const fnApiCheckBoxId = new lambdaApiCheckBoxId.LambdaApiCheckBoxId(this, 'lambda-api-check-box-id', {
       sentryDSN: sentryDSN,
