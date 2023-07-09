@@ -30,7 +30,7 @@ export class BoxTask extends Construct {
         this.name = props.name;
         this.compatibilityString = props.compatibility === ecs.Compatibility.FARGATE ? 'FARGATE' : 'EC2';
 
-        const task = new ecs.TaskDefinition(this, `box-task-${props.name}`, {
+        const task = new ecs.TaskDefinition(this, `task-${props.name}`, {
           compatibility: props.compatibility,
           cpu: '256',
           memoryMiB: '512',
@@ -45,7 +45,7 @@ export class BoxTask extends Construct {
         }
         this.image = image;
   
-        const container = task.addContainer(`box-${props.name}`, {
+        const container = task.addContainer(`container-${props.name}`, {
           image: image,
           cpu: 1,
           memoryReservationMiB: 512,

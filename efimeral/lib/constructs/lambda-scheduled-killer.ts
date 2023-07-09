@@ -9,18 +9,18 @@ import * as events from 'aws-cdk-lib/aws-events';
 import * as targets from 'aws-cdk-lib/aws-events-targets';
 
 
-export interface LambdaEventsKillerProps {
+export interface LambdaScheduledKillerProps {
   readonly sentryDSN: string;
   readonly cluster: ecs.Cluster;
   readonly layers: lambda.ILayerVersion[];
   readonly containerTimeoutMinutes: number;
 }
   
-export class LambdaEventsKiller extends Construct {
+export class LambdaScheduledKiller extends Construct {
 
     public readonly fn: lambdaNodeJS.NodejsFunction;
 
-    constructor(scope: Construct, id: string, props: LambdaEventsKillerProps) {
+    constructor(scope: Construct, id: string, props: LambdaScheduledKillerProps) {
         super(scope, id);
 
         const fn = new lambdaNodeJS.NodejsFunction(this, 'lambda-scheduled-killer', {
@@ -54,7 +54,7 @@ export class LambdaEventsKiller extends Construct {
         });
         fn.addToRolePolicy(policy);
 
-        const rule = new events.Rule(this, 'KillerScheduledRule', {
+        const rule = new events.Rule(this, 'lambda-scheduled-killer-rule', {
           schedule: events.Schedule.rate(cdk.Duration.minutes(1)),
         });
         rule.addTarget(new targets.LambdaFunction(fn));

@@ -8,7 +8,7 @@ import * as infrastructure from './constructs/infrastructure';
 import * as boxtask from './constructs/box-task';
 import * as lambdaApiCreateBox from './constructs/lambda-api-create-box';
 import * as lambdaApiCheckBoxId from './constructs/lambda-api-check-box-id';
-import * as lambdaEventsKiller from './constructs/lambda-events-killer';
+import * as lambdaEventsKiller from './constructs/lambda-scheduled-killer';
 import * as api from './constructs/api';
 
 
@@ -34,7 +34,7 @@ export class APIStack extends cdk.Stack {
     const taskDetails: { [key: string]: any } = {};
 
     images.forEach(props => {
-      const task = new boxtask.BoxTask(this, `${props.name}-box`, props);
+      const task = new boxtask.BoxTask(this, `box-task-${props.name}`, props);
       tasks[props.name] = task.task;
       taskDetails[props.name] = {
         arn: task.task.taskDefinitionArn,
@@ -46,7 +46,7 @@ export class APIStack extends cdk.Stack {
       this, 'sentry-dsn', 'lambdasSentryDSN'
     ).secretValue.unsafeUnwrap().toString();
 
-    const runningTasksLayer = new lambda.LayerVersion(this, 'running-tasks-layer', {
+    const runningTasksLayer = new lambda.LayerVersion(this, 'lambda-running-tasks-layer', {
       compatibleRuntimes: [
         lambda.Runtime.NODEJS_18_X,
       ],
@@ -72,14 +72,16 @@ export class APIStack extends cdk.Stack {
       layers: [runningTasksLayer,],
     });
 
-    const fnEventsKiller = new lambdaEventsKiller.LambdaEventsKiller(this, 'lambda-events-killer', {
+    const fnScheduledKiller = new lambdaEventsKiller.LambdaScheduledKiller(this, 'lambda-scheduled-killer', {
       sentryDSN: sentryDSN,
       cluster: infra.cluster,
       layers: [runningTasksLayer,],
       containerTimeoutMinutes: 10,
     });
 
-    const efimeralApi = new api.Api(this, 'efimeral-api', {
+    const efimeralApi = new api.Api(this, 'efimeral-rest-api', {
+      allowMethods: ['OPTIONS', 'GET', 'POST'],
+      allowOrigins: ['http://localhost:3000', 'http://efimeral.ar', 'https://efimeral.ar'],
       fnApiCreateBox: fnApiCreateBox,
       fnApiCheckBoxId: fnApiCheckBoxId,
       domain: 'efimeral.ar',

@@ -9,6 +9,8 @@ import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 
 
 export interface ApiProps {
+  readonly allowMethods: string[];
+  readonly allowOrigins: string[];
   readonly fnApiCreateBox: lambdaApiCreateBox.LambdaApiCreateBox;
   readonly fnApiCheckBoxId: lambdaApiCheckBoxId.LambdaApiCheckBoxId;
   readonly domain: string;
@@ -23,15 +25,15 @@ export class Api extends Construct {
     constructor(scope: Construct, id: string, props: ApiProps) {
         super(scope, id);
 
-        const restApi = new apigateway.RestApi(this, "boxes-api", {
+        const restApi = new apigateway.RestApi(this, "rest-api", {
           restApiName: "Efimeral service API",
           description: "Linux boxes on demand.",
           defaultCorsPreflightOptions: {
             allowHeaders: [
               'Content-Type',
             ],
-            allowMethods: ['OPTIONS', 'POST', 'GET'],
-            allowOrigins: ['http://localhost:3000', 'http://efimeral.ar', 'https://efimeral.ar'],
+            allowMethods: props.allowMethods,
+            allowOrigins: props.allowOrigins,
           },
         });
         this.restApi = restApi;
@@ -51,17 +53,17 @@ export class Api extends Construct {
         new cdk.CfnOutput(this, 'apiUrl', {value: restApi.url});
 
         // API Subdomain --------------------
-        const webZone = route53.PublicHostedZone.fromHostedZoneAttributes(this, 'lookup-web-hosted-zone', {
+        const webZone = route53.PublicHostedZone.fromHostedZoneAttributes(this, 'domain-lookup-web-hosted-zone', {
           zoneName: props.domain,
           hostedZoneId: props.webHostedZoneId,
         });
 
-        const certificate = new acm.Certificate(this, 'api-certificate', {
+        const certificate = new acm.Certificate(this, 'rest-api-certificate', {
           domainName: props.apiSubdomain,
           validation: acm.CertificateValidation.fromDns(webZone),
         });
   
-        const domain = new apigateway.DomainName(this, 'api-subdomain', {
+        const domain = new apigateway.DomainName(this, 'rest-api-subdomain', {
           domainName: props.apiSubdomain,
           certificate: certificate,
           endpointType: apigateway.EndpointType.REGIONAL,
@@ -71,7 +73,7 @@ export class Api extends Construct {
           basePath: 'prod',
         })
 
-        new route53.ARecord(this, 'api-subdomain-alias-record', {
+        new route53.ARecord(this, 'rest-api-subdomain-alias-record', {
           zone: webZone,
           recordName: props.apiSubdomain,
           target: route53.RecordTarget.fromAlias(new route53Targets.ApiGatewayDomain(domain)),

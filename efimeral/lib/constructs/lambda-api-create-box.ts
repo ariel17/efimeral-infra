@@ -25,7 +25,7 @@ export class LambdaApiCreateBox extends Construct {
     constructor(scope: Construct, id: string, props: LambdaApiCreateBoxProps) {
         super(scope, id);
 
-      const fn = new lambdaNodeJS.NodejsFunction(this, 'api-create-box', {
+      const fn = new lambdaNodeJS.NodejsFunction(this, 'lambda-api-create-box', {
         description: 'Creates new instances on Fargate cluster and returns the task ID as box ID.',
         runtime: lambda.Runtime.NODEJS_18_X,
         entry: './lambdas/api/create-box.js',

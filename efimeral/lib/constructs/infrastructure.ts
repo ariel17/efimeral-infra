@@ -22,7 +22,7 @@ export class Infrastructure extends Construct {
     constructor(scope: Construct, id: string, props: InfrastructureProps) {
         super(scope, id);
 
-        const repository = new ecr.Repository(this, props.ecrRepositoryName, {
+        const repository = new ecr.Repository(this, 'boxes-docker-repository', {
           repositoryName: props.ecrRepositoryName,
           imageScanOnPush: true,
           removalPolicy: cdk.RemovalPolicy.DESTROY,

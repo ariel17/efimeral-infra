@@ -20,7 +20,7 @@ export class LambdaApiCheckBoxId extends Construct {
     constructor(scope: Construct, id: string, props: LambdaApiCheckBoxIdProps) {
         super(scope, id);
 
-        const fn = new lambdaNodeJS.NodejsFunction(this, 'api-check-box-id', {
+        const fn = new lambdaNodeJS.NodejsFunction(this, 'lambda-api-check-box-id', {
           description: 'Checks RUNNING state for box ID and returns its public URL if exists',
           runtime: lambda.Runtime.NODEJS_18_X,
           entry: './lambdas/api/check-box-id.js',
@@ -51,7 +51,5 @@ export class LambdaApiCheckBoxId extends Construct {
           effect: iam.Effect.ALLOW,
         });
         fn.addToRolePolicy(policy);
-
-
     }
 }
