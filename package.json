@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@aws-sdk/client-eventbridge": "^3.370.0",
     "aws-cdk-lib": "^2.78.0"
   }
 }
