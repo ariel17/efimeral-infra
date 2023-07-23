@@ -1,5 +1,6 @@
 const { ECS } = require("@aws-sdk/client-ecs");
 const Sentry = require("@sentry/serverless");
+const { EventBridge } = require("@aws-sdk/client-eventbridge");
 const { getRunningTasks } = require('/opt/nodejs/running-tasks');
 
 
@@ -52,6 +53,33 @@ exports.handler = Sentry.AWSLambda.wrapHandler(async (event, context) => {
     const runTaskData = await runTask(ecs, tag);
     if (runTaskData.tasks.length === 0) {
       throw String(runTaskData.failures[0].reason);
+    }
+
+    const eb = new EventBridge();
+    const params = {
+      Entries: [
+        {
+          Source: 'lambda-api-create-box',
+          DetailType: 'pending-domain-creation',
+          Time: new Date(),
+          EventBusName: process.env.EVENT_BUS_ARN,
+          Detail: JSON.stringify({
+            taskArn: runTaskData.tasks[0].taskArn,
+          }),
+        }
+      ],
+    };
+    const eventResult = await eb.putEvents(params);
+    console.log("Pending domain event send result: ", eventResult);
+    if (eventResult.FailedEntryCount > 0) {
+      return {
+        statusCode: 500,
+        headers: headers,
+        body: JSON.stringify({
+          message: 'Failed to send pending domain event',
+          error: eventResult.Entries[0].ErrorMessage,
+        }),
+      };
     }
 
     return {
