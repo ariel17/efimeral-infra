@@ -6,6 +6,7 @@ import * as logs from "aws-cdk-lib/aws-logs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as lambdaNodeJS from "aws-cdk-lib/aws-lambda-nodejs";
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as events from 'aws-cdk-lib/aws-events';
 import * as boxtask from './box-task';
 
 
@@ -17,6 +18,7 @@ export interface LambdaApiCreateBoxProps {
   readonly layers: lambda.ILayerVersion[];
   readonly availableTags: string[];
   readonly tasks: boxtask.BoxTask[];
+  readonly eventBus: events.EventBus;
 }
   
 interface TaskDetailsProps {
@@ -57,6 +59,7 @@ export class LambdaApiCreateBox extends Construct {
             AVAILABLE_TAGS: JSON.stringify(props.availableTags),
             SUBNET_ID: props.vpc.publicSubnets[0].subnetId,
             SECURITY_GROUP_ID: props.sg.securityGroupId,
+            EVENT_BUS_ARN: props.eventBus.eventBusArn,
           },
           bundling: {
             nodeModules: [
@@ -73,7 +76,7 @@ export class LambdaApiCreateBox extends Construct {
         props.tasks.forEach(task => task.task.grantRun(fn));
 
         const policy = new iam.PolicyStatement({
-          actions: ['ecs:RunTask', 'ecs:ListTasks',],
+          actions: ['ecs:RunTask', 'ecs:ListTasks', 'events:PutEvents'],
           resources: ["*"],
           effect: iam.Effect.ALLOW,
         });
