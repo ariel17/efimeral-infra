@@ -21,6 +21,7 @@ export class APIStack extends cdk.Stack {
       ecrRepositoryName: 'efimeral-boxes',
       clusterEc2MinCapacity: 0,  // CHANGE THIS to 1 to support EC2 tasks
       clusterEc2MaxCapacity: 0,  // CHANGE THIS to 1 to support EC2 tasks
+      boxesSubDomain: 'boxes.efimeral.ar',
     });
 
     const images: boxtask.BoxTaskProps[] = [
@@ -55,6 +56,7 @@ export class APIStack extends cdk.Stack {
       layers: [runningTasksLayer,],
       availableTags: images.map(props => props.name),
       tasks: tasks,
+      eventBus: infra.bus,
     });
 
     const fnApiCheckBoxId = new lambdaApiCheckBoxId.LambdaApiCheckBoxId(this, 'lambda-api-check-box-id', {
