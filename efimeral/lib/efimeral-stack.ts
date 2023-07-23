@@ -49,10 +49,6 @@ export class APIStack extends cdk.Stack {
       description: 'Adds handy methods to work with running tasks.',
     });
 
-    const fnConsumerDominator = new lambdaConsumerDominator.LambdaConsumerDominator(this, 'lambda-consumer-dominator', {
-      sentryDSN: sentryDSN,
-    });
-
     const fnApiCreateBox = new lambdaApiCreateBox.LambdaApiCreateBox(this, 'lambda-api-create-box', {
       sentryDSN: sentryDSN,
       vpc: infra.vpc,
@@ -61,7 +57,6 @@ export class APIStack extends cdk.Stack {
       layers: [runningTasksLayer,],
       availableTags: images.map(props => props.name),
       tasks: tasks,
-      dominatorLambda: fnConsumerDominator.fn,
     });
 
     const fnApiCheckBoxId = new lambdaApiCheckBoxId.LambdaApiCheckBoxId(this, 'lambda-api-check-box-id', {
@@ -75,6 +70,10 @@ export class APIStack extends cdk.Stack {
       cluster: infra.cluster,
       layers: [runningTasksLayer,],
       containerTimeoutMinutes: 10,
+    });
+
+    const fnConsumerDominator = new lambdaConsumerDominator.LambdaConsumerDominator(this, 'lambda-consumer-dominator', {
+      sentryDSN: sentryDSN,
     });
 
     const efimeralApi = new api.Api(this, 'efimeral-rest-api', {

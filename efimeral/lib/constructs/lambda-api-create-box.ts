@@ -17,7 +17,6 @@ export interface LambdaApiCreateBoxProps {
   readonly layers: lambda.ILayerVersion[];
   readonly availableTags: string[];
   readonly tasks: boxtask.BoxTask[];
-  readonly dominatorLambda: lambdaNodeJS.NodejsFunction;
 }
   
 interface TaskDetailsProps {
