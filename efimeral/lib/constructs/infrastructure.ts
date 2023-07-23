@@ -4,7 +4,6 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from "aws-cdk-lib/aws-ecs";
 import * as servicediscovery from "aws-cdk-lib/aws-servicediscovery";
-import * as events from "aws-cdk-lib/aws-events";
 
 
 export interface InfrastructureProps {
@@ -21,7 +20,6 @@ export class Infrastructure extends Construct {
     public readonly vpc: ec2.Vpc;
     public readonly sg: ec2.SecurityGroup;
     public readonly cluster: ecs.Cluster;
-    public readonly bus: events.EventBus;
     public readonly ns: servicediscovery.PublicDnsNamespace;
     public readonly service: servicediscovery.Service;
 
@@ -68,11 +66,6 @@ export class Infrastructure extends Construct {
           vpc: vpc,
         }); 
         this.cluster = cluster;
-
-        const bus = new events.EventBus(this, 'pending-domains-bus', {
-          eventBusName: 'pending-domain-bus'
-        });
-        this.bus = bus;
 
         const ns = new servicediscovery.PublicDnsNamespace(this, 'boxes-ns', {
           name: props.boxesSubDomain,
