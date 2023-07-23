@@ -9,6 +9,7 @@ import * as boxtask from './constructs/box-task';
 import * as lambdaApiCreateBox from './constructs/lambda-api-create-box';
 import * as lambdaApiCheckBoxId from './constructs/lambda-api-check-box-id';
 import * as lambdaEventsKiller from './constructs/lambda-scheduled-killer';
+import * as lambdaConsumerDominator from './constructs/lambda-consumer-dominator';
 import * as api from './constructs/api';
 
 
@@ -48,6 +49,10 @@ export class APIStack extends cdk.Stack {
       description: 'Adds handy methods to work with running tasks.',
     });
 
+    const fnConsumerDominator = new lambdaConsumerDominator.LambdaConsumerDominator(this, 'lambda-consumer-dominator', {
+      sentryDSN: sentryDSN,
+    });
+
     const fnApiCreateBox = new lambdaApiCreateBox.LambdaApiCreateBox(this, 'lambda-api-create-box', {
       sentryDSN: sentryDSN,
       vpc: infra.vpc,
@@ -56,7 +61,7 @@ export class APIStack extends cdk.Stack {
       layers: [runningTasksLayer,],
       availableTags: images.map(props => props.name),
       tasks: tasks,
-      eventBus: infra.bus,
+      dominatorLambda: fnConsumerDominator.fn,
     });
 
     const fnApiCheckBoxId = new lambdaApiCheckBoxId.LambdaApiCheckBoxId(this, 'lambda-api-check-box-id', {
